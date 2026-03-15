@@ -1,6 +1,16 @@
-import { createClerkClient } from '@clerk/backend';
+export const config = { maxDuration: 10 };
 
-const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
+function getUserId(token) {
+  try {
+    const payload = token.split('.')[1];
+    const decoded = JSON.parse(Buffer.from(payload, 'base64url').toString());
+    if (!decoded.sub) throw new Error('No sub');
+    if (decoded.exp < Date.now() / 1000) throw new Error('Expired');
+    return decoded.sub;
+  } catch(e) {
+    throw new Error('Invalid token: ' + e.message);
+  }
+}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -11,16 +21,14 @@ export default async function handler(req, res) {
 
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
-    if (!token) return res.status(401).json({ error: 'Unauthorized' });
+    if (!token) return res.status(401).json({ error: 'No token' });
 
-    const payload = await clerk.verifyToken(token);
-    const userId = payload.sub;
+    const userId = getUserId(token);
 
     const kvUrl = process.env.KV_REST_API_URL;
     const kvToken = process.env.KV_REST_API_TOKEN;
     const key = `user:${userId}:artists`;
 
-    // Upstash REST API: GET /get/key
     const response = await fetch(`${kvUrl}/get/${encodeURIComponent(key)}`, {
       headers: { 'Authorization': `Bearer ${kvToken}` },
     });
