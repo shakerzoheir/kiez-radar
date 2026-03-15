@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/api/ra", "destination": "/api/ra" }
+  ]
+}
+
