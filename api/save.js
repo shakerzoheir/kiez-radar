@@ -10,7 +10,6 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
   try {
-    // Verify the session token from Authorization header
     const token = req.headers.authorization?.replace('Bearer ', '');
     if (!token) return res.status(401).json({ error: 'Unauthorized' });
 
@@ -20,20 +19,21 @@ export default async function handler(req, res) {
     const { artists } = req.body;
     if (!Array.isArray(artists)) return res.status(400).json({ error: 'artists must be an array' });
 
-    // Save to Vercel KV via REST API
     const kvUrl = process.env.KV_REST_API_URL;
     const kvToken = process.env.KV_REST_API_TOKEN;
+    const key = `user:${userId}:artists`;
+    const value = JSON.stringify(artists);
 
-    const response = await fetch(`${kvUrl}/set/user:${userId}:artists`, {
+    // Upstash REST API: POST /set/key/value
+    const response = await fetch(`${kvUrl}/set/${encodeURIComponent(key)}/${encodeURIComponent(value)}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${kvToken}`,
-        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ value: JSON.stringify(artists) }),
     });
 
-    if (!response.ok) throw new Error('Failed to save to KV');
+    const result = await response.json();
+    if (result.error) throw new Error(result.error);
 
     return res.status(200).json({ success: true, count: artists.length });
   } catch (err) {

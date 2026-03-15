@@ -18,16 +18,17 @@ export default async function handler(req, res) {
 
     const kvUrl = process.env.KV_REST_API_URL;
     const kvToken = process.env.KV_REST_API_TOKEN;
+    const key = `user:${userId}:artists`;
 
-    const response = await fetch(`${kvUrl}/get/user:${userId}:artists`, {
+    // Upstash REST API: GET /get/key
+    const response = await fetch(`${kvUrl}/get/${encodeURIComponent(key)}`, {
       headers: { 'Authorization': `Bearer ${kvToken}` },
     });
 
-    if (!response.ok) return res.status(200).json({ artists: null });
-
     const data = await response.json();
-    const artists = data.result ? JSON.parse(data.result) : null;
+    if (data.error) throw new Error(data.error);
 
+    const artists = data.result ? JSON.parse(data.result) : null;
     return res.status(200).json({ artists });
   } catch (err) {
     return res.status(500).json({ error: err.message });
