@@ -1,6 +1,7 @@
 {
   "name": "kiez-radar",
   "version": "1.0.0",
+  "type": "module",
   "dependencies": {
     "@clerk/backend": "^1.0.0"
   }
