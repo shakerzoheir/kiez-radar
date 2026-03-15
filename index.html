@@ -217,15 +217,23 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
 
   <!-- STEP 3: Results -->
   <div class="step" id="s3">
-    <div class="res-hdr">
+    <div class="res-hdr" style="flex-wrap:wrap;gap:10px">
       <div class="res-title" id="restitle">BERLIN GIGS</div>
       <div class="res-count" id="rescount"></div>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center;padding-bottom:4px">
+        <button class="btn-s" onclick="goBack()">← Edit artists</button>
+        <button class="btn-s" onclick="editTimeframe()">⏱ Edit timeframe</button>
+      </div>
     </div>
-    <div class="filter-row">
+    <div class="filter-row" style="flex-wrap:wrap;row-gap:10px">
       <span class="filter-lbl">Show:</span>
       <button class="tog on" id="fmatched" onclick="setFilter('matched')">Your artists only</button>
       <button class="tog" id="fall" onclick="setFilter('all')">All Berlin events</button>
-      <button class="btn-s" style="margin-left:auto" onclick="goBack()">← Edit artists</button>
+      <div style="display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap">
+        <span class="filter-lbl">Jump to day:</span>
+        <input type="date" id="day-picker" style="background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:11px;padding:5px 10px;outline:none;color-scheme:dark" oninput="filterByDay(this.value)">
+        <button class="btn-s" id="clear-day" onclick="clearDay()" style="display:none">✕ Clear</button>
+      </div>
     </div>
     <div id="reslist"></div>
     <div class="no-res" id="nores">No Berlin events found for your artists in the selected period.</div>
@@ -234,7 +242,7 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
 </div>
 
 <script>
-let artists=[], selected=new Set(), events=[], showAll=false;
+let artists=[], selected=new Set(), events=[], showAll=false, selectedDay='';
 let dateFrom='', dateTo='';
 
 // Init dates
@@ -491,6 +499,12 @@ async function run(){
     setProg(100);
     setTimeout(()=>setProg(0,false),500);
     setStatus('',false);
+    // Set day picker range to match fetched dates
+    const dp=document.getElementById('day-picker');
+    dp.min=df; dp.max=dt;
+    selectedDay='';
+    document.getElementById('day-picker').value='';
+    document.getElementById('clear-day').style.display='none';
     renderResults(false);
     goStep('s3');
 
@@ -514,7 +528,8 @@ function isHit(name){
 function renderResults(all){
   const list=document.getElementById('reslist');
   const seen=new Set();
-  const evts=events.filter(i=>{const u=i.event?.contentUrl;if(seen.has(u))return false;seen.add(u);return true;});
+  let evts=events.filter(i=>{const u=i.event?.contentUrl;if(seen.has(u))return false;seen.add(u);return true;});
+  if(selectedDay) evts=evts.filter(i=>i.event.date?.split('T')[0]===selectedDay);
   const filtered=all?evts:evts.filter(i=>(i.event.artists||[]).some(a=>isHit(a.name)));
   document.getElementById('nores').style.display=filtered.length?'none':'block';
   if(!filtered.length){list.innerHTML='';document.getElementById('rescount').textContent='// 0 events';return;}
@@ -559,7 +574,35 @@ function fmtDate(s){
 }
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function goStep(id){document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
-function goBack(){goStep('s2');}
+
+function editTimeframe(){
+  goStep('s2');
+  setTimeout(()=>{
+    const el=document.getElementById('quickbtns');
+    if(el)el.scrollIntoView({behavior:'smooth',block:'center'});
+  },120);
+}
+
+function filterByDay(val){
+  selectedDay=val;
+  const clearBtn=document.getElementById('clear-day');
+  clearBtn.style.display=val?'':'none';
+  if(val){
+    // Update day picker min/max to match fetched range
+    const picker=document.getElementById('day-picker');
+    picker.value=val;
+  }
+  renderResults(showAll);
+}
+
+function clearDay(){
+  selectedDay='';
+  document.getElementById('day-picker').value='';
+  document.getElementById('clear-day').style.display='none';
+  renderResults(showAll);
+}
+
+function goBack(){clearDay();goStep('s2');}
 function reset(){artists=[];selected.clear();events=[];document.getElementById('finput').value='';initDates();goStep('s1');}
 function setStatus(msg,show){const b=document.getElementById('statusbar');document.getElementById('stxt').textContent=msg;b.classList.toggle('on',!!show);}
 function setProg(pct,show){const w=document.getElementById('progwrap'),b=document.getElementById('progbar');if(show!==undefined)w.classList.toggle('on',!!show);b.style.width=pct+'%';}
