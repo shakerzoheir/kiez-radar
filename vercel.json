@@ -1,0 +1,8 @@
+{
+  "functions": {
+    "api/ra.js": {
+      "maxDuration": 60
+    }
+  }
+}
+
