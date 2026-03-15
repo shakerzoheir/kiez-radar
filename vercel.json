@@ -1,7 +1,1 @@
-{
-  "functions": {
-    "api/ra.js":   { "maxDuration": 60 },
-    "api/save.js": { "maxDuration": 10 },
-    "api/load.js": { "maxDuration": 10 }
-  }
-}
+{}
