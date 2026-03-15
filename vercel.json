@@ -1,1 +1,5 @@
-{}
+{
+  "rewrites": [
+    { "source": "/public/:path*", "destination": "/public/:path*" }
+  ]
+}

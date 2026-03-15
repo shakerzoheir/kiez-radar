@@ -8,8 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script async crossorigin="anonymous" data-clerk-publishable-key="pk_test_bGl2ZS1zaHJpbXAtNTguY2xlcmsuYWNjb3VudHMuZGV2JA"
   src="https://live-shrimp-58.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
-  type="text/javascript">
-</script>
+  type="text/javascript"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -19,68 +18,78 @@
 }
 body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden}
 body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:9999;opacity:.4}
-header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex;align-items:flex-end;gap:20px}
+header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap}
 .logo{font-family:var(--display);font-size:clamp(52px,8vw,88px);letter-spacing:.04em;line-height:.9;color:var(--accent)}
 .logo-sub{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.15em;text-transform:uppercase;padding-bottom:6px;line-height:1.8}
 .header-right{margin-left:auto;display:flex;align-items:center;gap:12px;padding-bottom:8px}
 .user-info{font-family:var(--mono);font-size:11px;color:var(--muted)}
 .main{max-width:1060px;margin:0 auto;padding:36px 40px 80px}
 .step{display:none}.step.active{display:block}
-.step-hdr{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:18px;display:flex;align-items:center;gap:10px}
-.step-num{width:18px;height:18px;border:1px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0}
-/* Auth screen */
+/* Auth */
 .auth-screen{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;gap:24px}
 .auth-screen.active{display:flex}
-.auth-title{font-family:var(--display);font-size:32px;letter-spacing:.04em;color:var(--text)}
+.auth-title{font-family:var(--display);font-size:32px;letter-spacing:.04em}
 .auth-sub{font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.8;max-width:400px}
 .auth-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
-/* Upload */
-.upload-zone{border:1px dashed var(--border);padding:56px 40px;text-align:center;cursor:pointer;transition:all .2s;position:relative;background:var(--surface)}
+/* Loading */
+.loading-screen{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:20px}
+.loading-screen.active{display:flex}
+.loading-title{font-family:var(--display);font-size:28px;letter-spacing:.04em;color:var(--muted)}
+.loading-spin{width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+/* Upload screen */
+.upload-heading{font-family:var(--display);font-size:36px;letter-spacing:.04em;color:var(--text);margin-bottom:32px}
+.upload-options{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px}
+.upload-card{background:var(--surface);border:1px solid var(--border);padding:28px;display:flex;flex-direction:column;gap:16px}
+.upload-card-title{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)}
+.upload-steps{list-style:none;display:flex;flex-direction:column;gap:10px}
+.upload-steps li{font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.6;padding-left:16px;position:relative}
+.upload-steps li::before{content:'→';position:absolute;left:0;color:var(--accent)}
+.upload-steps a{color:var(--accent);text-decoration:none}
+.upload-steps .note{font-size:10px;color:#666;display:block;margin-top:2px}
+.upload-zone{border:1px dashed var(--border);padding:28px 20px;text-align:center;cursor:pointer;transition:all .2s;position:relative;background:var(--bg);margin-top:auto}
 .upload-zone:hover,.upload-zone.over{border-color:var(--accent);background:rgba(232,255,0,.03)}
 .upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-.upload-icon{font-family:var(--display);font-size:44px;color:var(--muted);letter-spacing:.05em;margin-bottom:14px}
-.upload-label{font-family:var(--mono);font-size:13px;color:var(--text);margin-bottom:8px}
-.upload-hint{font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.9}
-.upload-hint a{color:var(--accent);text-decoration:none}
-/* Saved list banner */
-.saved-banner{background:rgba(232,255,0,.06);border:1px solid rgba(232,255,0,.2);padding:16px 20px;margin-bottom:22px;display:none;align-items:center;gap:14px;flex-wrap:wrap}
-.saved-banner.visible{display:flex}
-.saved-banner-text{font-family:var(--mono);font-size:12px;color:var(--accent);flex:1}
+.upload-zone-label{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.upload-zone-label span{color:var(--accent)}
+.divider{display:flex;align-items:center;gap:12px;font-family:var(--mono);font-size:10px;color:var(--border);letter-spacing:.2em}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+/* Manual input card */
+.manual-input-wrap{display:flex;flex-direction:column;gap:12px;flex:1}
+.manual-hint{font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.6}
+.autocomplete-wrap{position:relative}
+.autocomplete-input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:10px 13px;outline:none;transition:border-color .2s}
+.autocomplete-input:focus{border-color:var(--accent)}
+.autocomplete-input::placeholder{color:var(--muted)}
+.autocomplete-dropdown{position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-top:none;z-index:100;max-height:200px;overflow-y:auto;display:none}
+.autocomplete-item{font-family:var(--mono);font-size:12px;padding:8px 13px;cursor:pointer;color:var(--text);display:flex;align-items:center;gap:8px}
+.autocomplete-item:hover,.autocomplete-item.active{background:var(--surface2);color:var(--accent)}
+.autocomplete-item .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0}
+/* Pills */
+.sec-label{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:10px}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px;max-height:280px;overflow-y:auto;padding-right:2px}
+.pills::-webkit-scrollbar{width:3px}.pills::-webkit-scrollbar-thumb{background:var(--border)}
+.pill{font-family:var(--mono);font-size:13px;padding:5px 13px;border:1px solid var(--border);color:var(--muted);background:var(--surface2);cursor:pointer;user-select:none;transition:all .1s;display:flex;align-items:center;gap:6px}
+.pill:hover{border-color:#555;color:#ccc}
+.pill.on{border-color:rgba(255,255,255,.25);color:#fff;background:rgba(255,255,255,.06)}
+.pill.verified{border-color:rgba(232,255,0,.3)}
+.pill.verified.on{border-color:rgba(232,255,0,.5)}
+.pill .vdot{width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0;opacity:.7}
+.pill .x{font-size:11px;color:var(--muted);opacity:0;transition:opacity .1s}
+.pill:hover .x{opacity:1}
 /* Panel */
 .panel{background:var(--surface);border:1px solid var(--border);padding:26px;margin-bottom:22px}
 .meta{font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:18px;display:flex;gap:20px;flex-wrap:wrap}
 .meta span{color:var(--accent)}
-.add-row{display:flex;gap:8px;margin-bottom:18px}
-.add-row input{flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 13px;outline:none;transition:border-color .2s}
-.add-row input:focus{border-color:var(--accent)}
-.add-row input::placeholder{color:var(--muted)}
-.sec-label{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:10px}
-.sec-label::after{content:'';flex:1;height:1px;background:var(--border)}
-/* Pills */
-.pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px;max-height:320px;overflow-y:auto;padding-right:2px}
-.pills::-webkit-scrollbar{width:3px}.pills::-webkit-scrollbar-thumb{background:var(--border)}
-.pill{font-family:var(--mono);font-size:13px;padding:5px 13px;border:1px solid var(--border);color:var(--muted);background:var(--surface2);cursor:pointer;user-select:none;transition:all .1s;display:flex;align-items:center;gap:6px}
-.pill:hover{border-color:#555;color:#ccc}
-.pill.on{border-color:rgba(255,255,255,0.25);color:#ffffff;background:rgba(255,255,255,0.06)}
-.pill.on:hover{border-color:rgba(255,255,255,0.4)}
-.pill .x{font-size:11px;color:var(--muted);opacity:0;transition:opacity .1s;line-height:1}
-.pill:hover .x{opacity:1}
-/* Date */
-.date-range{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px}
-.date-field{display:flex;flex-direction:column;gap:7px}
-.date-field label{font-family:var(--mono);font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
-.date-field input[type="date"]{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 13px;outline:none;transition:border-color .2s;width:100%;color-scheme:dark}
-.date-field input[type="date"]:focus{border-color:var(--accent)}
-.date-quick{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:22px}
-.qbtn{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:5px 12px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s}
-.qbtn:hover{border-color:var(--muted);color:var(--text)}
-.qbtn.on{border-color:var(--accent);color:var(--accent)}
-/* Save indicator */
 .save-row{display:flex;align-items:center;gap:10px;margin-bottom:16px;font-family:var(--mono);font-size:11px;color:var(--muted)}
 .save-dot{width:7px;height:7px;border-radius:50%;background:var(--border);flex-shrink:0;transition:background .3s}
 .save-dot.saved{background:var(--accent)}
 .save-dot.saving{background:#ff9900;animation:pulse .8s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.add-row{display:flex;gap:8px;margin-bottom:18px;position:relative}
+.add-row input{flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 13px;outline:none;transition:border-color .2s}
+.add-row input:focus{border-color:var(--accent)}
+.add-row input::placeholder{color:var(--muted)}
 /* Buttons */
 .btn-row{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
 .btn{font-family:var(--display);font-size:21px;letter-spacing:.06em;padding:11px 30px;border:none;cursor:pointer;transition:all .15s}
@@ -90,7 +99,6 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
 .btn-s{background:transparent;color:var(--muted);border:1px solid var(--border);font-size:11px;font-family:var(--mono);padding:8px 16px;letter-spacing:.05em;cursor:pointer}
 .btn-s:hover{border-color:var(--muted);color:var(--text)}
 .btn-warn{background:transparent;color:var(--accent2);border:1px solid rgba(255,61,0,.3);font-size:11px;font-family:var(--mono);padding:8px 16px;letter-spacing:.05em;cursor:pointer}
-.btn-warn:hover{border-color:var(--accent2)}
 /* Status */
 .status{font-family:var(--mono);font-size:12px;color:var(--muted);padding:11px 0;display:none;align-items:center;gap:9px}
 .status.on{display:flex}
@@ -105,10 +113,37 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
 .res-hdr{display:flex;align-items:baseline;gap:14px;margin-bottom:8px;flex-wrap:wrap}
 .res-title{font-family:var(--display);font-size:40px;letter-spacing:.04em}
 .res-count{font-family:var(--mono);font-size:12px;color:var(--muted)}
-.filter-row{display:flex;gap:9px;margin-bottom:26px;align-items:center;flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid var(--border);row-gap:10px}
+.filter-row{display:flex;gap:9px;margin-bottom:0;align-items:center;flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid var(--border);row-gap:10px}
 .filter-lbl{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .tog{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:5px 13px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s}
 .tog.on{border-color:var(--accent);color:var(--accent)}
+/* Calendar */
+.timeframe-panel{background:var(--surface);border:1px solid var(--border);padding:24px;margin-bottom:24px;display:none}
+.timeframe-panel.open{display:block}
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.cal-title{font-family:var(--mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--text)}
+.cal-nav{background:transparent;border:1px solid var(--border);color:var(--muted);font-family:var(--mono);font-size:13px;padding:4px 10px;cursor:pointer}
+.cal-nav:hover{border-color:var(--muted);color:var(--text)}
+.cal-months{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.cal-month{}
+.cal-month-title{font-family:var(--mono);font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;text-align:center}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cal-dow{font-family:var(--mono);font-size:9px;color:var(--muted);text-align:center;padding:4px 0;letter-spacing:.05em}
+.cal-day{font-family:var(--mono);font-size:11px;text-align:center;padding:6px 2px;cursor:pointer;border-radius:2px;color:var(--muted);transition:all .1s;user-select:none}
+.cal-day:hover:not(.empty):not(.past){background:var(--surface2);color:var(--text)}
+.cal-day.empty{cursor:default}
+.cal-day.past{opacity:.3;cursor:default}
+.cal-day.today{color:var(--text);font-weight:500}
+.cal-day.start,.cal-day.end{background:var(--accent);color:#000 !important;font-weight:500}
+.cal-day.inrange{background:rgba(232,255,0,.15);color:var(--accent)}
+.cal-day.start.end{background:var(--accent);color:#000}
+.cal-range-info{font-family:var(--mono);font-size:11px;color:var(--muted);margin:16px 0 12px;text-align:center}
+.cal-range-info span{color:var(--accent)}
+.cal-actions{display:flex;gap:10px;justify-content:center;margin-top:16px}
+/* Day picker in filter row */
+.day-jump{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+/* Events */
+.results-wrap{margin-top:24px}
 .date-grp{margin-bottom:30px}
 .date-lbl{font-family:var(--mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent2);padding:7px 0;border-bottom:1px solid var(--border);margin-bottom:2px}
 .ecard{display:grid;grid-template-columns:1fr auto;gap:14px;padding:16px 0;border-bottom:1px solid var(--border);transition:all .12s;align-items:start}
@@ -123,12 +158,11 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
 .elink:hover{background:var(--accent);color:#000}
 .mbadge{font-family:var(--mono);font-size:10px;color:var(--accent);display:block;margin-top:5px;text-align:right}
 .no-res{font-family:var(--mono);font-size:13px;color:var(--muted);padding:44px 0;text-align:center;display:none}
-@media(max-width:680px){
-  header{padding:24px 18px 18px;gap:14px;flex-wrap:wrap}
+@media(max-width:700px){
+  header{padding:24px 18px 18px;gap:14px}
   .main{padding:22px 18px 56px}
-  .upload-zone{padding:36px 18px}
-  .panel{padding:18px}
-  .date-range{grid-template-columns:1fr}
+  .upload-options{grid-template-columns:1fr}
+  .cal-months{grid-template-columns:1fr}
   .ecard{grid-template-columns:1fr}
   .emeta{text-align:left}
 }
@@ -141,89 +175,92 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
   <div class="logo-sub">Berlin gig finder<br>SoundCloud × Resident Advisor</div>
   <div class="header-right" id="header-right" style="display:none">
     <span class="user-info" id="user-email"></span>
+    <button class="btn-s" onclick="goStep('s2')">Edit artists</button>
     <button class="btn-s" onclick="signOut()">Sign out</button>
   </div>
 </header>
 
 <div class="main">
 
-  <!-- AUTH SCREEN -->
+  <!-- AUTH -->
   <div class="auth-screen" id="auth-screen">
     <div class="auth-title">Welcome to Kiez Radar</div>
-    <div class="auth-sub">Sign in to save your artist list and pick up where you left off — on any device.</div>
+    <div class="auth-sub">Sign in to save your artists and go straight to your Berlin events every time.</div>
     <div class="auth-btns">
       <button class="btn btn-p" onclick="openSignIn()">SIGN IN</button>
       <button class="btn-s" onclick="openSignUp()">Create account</button>
     </div>
   </div>
 
-  <!-- STEP 1: Upload -->
+  <!-- LOADING -->
+  <div class="loading-screen" id="loading-screen">
+    <div class="loading-spin"></div>
+    <div class="loading-title">Loading your events...</div>
+  </div>
+
+  <!-- STEP 1: Add artists -->
   <div class="step" id="s1">
-    <div class="step-hdr"><div class="step-num">1</div>Upload your SoundCloud library</div>
+    <div class="upload-heading">Add your artists</div>
+    <div class="upload-options">
 
-    <!-- Saved list banner -->
-    <div class="saved-banner" id="saved-banner">
-      <span class="saved-banner-text" id="saved-banner-text">You have a saved artist list</span>
-      <button class="btn-s" onclick="loadSaved()">Load saved list →</button>
-      <button class="btn-warn" onclick="ignoreSaved()">Upload new CSV</button>
-    </div>
-
-    <div class="upload-zone" id="uzone">
-      <input type="file" id="finput" accept=".csv">
-      <div class="upload-icon">CSV</div>
-      <div class="upload-label">Drop your CSV here or click to browse</div>
-      <div class="upload-hint">
-        Export via <a href="https://www.tunemymusic.com/transfer/soundcloud-to-file" target="_blank">TuneMyMusic</a> → connect SoundCloud → download your library as CSV<br>
-        Also accepts a plain artist name list (one per row)
+      <!-- Option 1: CSV -->
+      <div class="upload-card">
+        <div class="upload-card-title">// Option 1 — Import from SoundCloud</div>
+        <ol class="upload-steps">
+          <li>Go to <a href="https://www.tunemymusic.com/transfer/soundcloud-to-file" target="_blank">TuneMyMusic</a></li>
+          <li>Connect your SoundCloud account</li>
+          <li>Select your library or playlists to export<span class="note">Free plan: up to 500 tracks</span></li>
+          <li>Export as CSV file</li>
+          <li>Drop the file in the box below</li>
+        </ol>
+        <div class="upload-zone" id="uzone">
+          <input type="file" id="finput" accept=".csv">
+          <div class="upload-zone-label">Drop CSV here or <span>click to browse</span></div>
+        </div>
       </div>
+
+      <!-- Option 2: Manual -->
+      <div class="upload-card">
+        <div class="upload-card-title">// Option 2 — Add artists manually</div>
+        <div class="manual-input-wrap">
+          <div class="manual-hint">Type an artist name and press Enter or click Add. Suggestions come from artists who have played Berlin in the last 2 years.</div>
+          <div class="autocomplete-wrap">
+            <input type="text" class="autocomplete-input" id="manual-input" placeholder="e.g. Narciss, HiTMiLØW..." autocomplete="off" spellcheck="false">
+            <div class="autocomplete-dropdown" id="autocomplete-dropdown"></div>
+          </div>
+          <button class="btn-s" onclick="addManualArtist()">+ Add artist</button>
+          <div id="manual-pills" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
+        </div>
+        <button class="btn btn-p" id="manual-go-btn" onclick="useManualArtists()" disabled style="margin-top:auto">USE THIS LIST →</button>
+      </div>
+
     </div>
     <div class="err" id="uerr"></div>
   </div>
 
   <!-- STEP 2: Review -->
   <div class="step" id="s2">
-    <div class="step-hdr"><div class="step-num">2</div>Review artists — deselect false positives, add missing ones</div>
     <div class="panel">
       <div class="meta" id="meta"></div>
-
-      <!-- Save status -->
       <div class="save-row">
         <div class="save-dot" id="save-dot"></div>
-        <span id="save-status">Not saved yet</span>
-        <button class="btn-s" id="save-btn" onclick="saveArtists()" style="padding:4px 12px;font-size:10px">Save list</button>
+        <span id="save-status">Not saved</span>
+        <button class="btn-s" id="save-btn" onclick="saveArtists()" style="padding:4px 12px;font-size:10px;margin-left:4px">Save now</button>
       </div>
-
       <div class="add-row">
-        <input type="text" id="addinput" placeholder="Add artist manually..." autocomplete="off" spellcheck="false">
-        <button class="btn-s" onclick="addManual()">+ ADD</button>
+        <div class="autocomplete-wrap" style="flex:1">
+          <input type="text" class="autocomplete-input" id="addinput" placeholder="Add artist..." autocomplete="off" spellcheck="false">
+          <div class="autocomplete-dropdown" id="add-dropdown"></div>
+        </div>
+        <button class="btn-s" onclick="addArtist()">+ ADD</button>
       </div>
-      <div class="sec-label" id="pillslbl">Extracted artists</div>
+      <div class="sec-label" id="pillslbl">Artists</div>
       <div class="pills" id="pills"></div>
-
-      <div class="sec-label" style="margin-top:4px">Date range</div>
-      <div class="date-quick" id="quickbtns">
-        <button class="qbtn on" onclick="setQuick(1,'month',this)">Next month</button>
-        <button class="qbtn" onclick="setQuick(3,'month',this)">3 months</button>
-        <button class="qbtn" onclick="setQuick(6,'month',this)">6 months</button>
-        <button class="qbtn" onclick="setQuick(2,'week',this)">2 weeks</button>
-        <button class="qbtn" onclick="setQuick(0,'custom',this)">Custom</button>
-      </div>
-      <div class="date-range" id="custom-dates" style="display:none">
-        <div class="date-field">
-          <label>From</label>
-          <input type="date" id="date-from">
-        </div>
-        <div class="date-field">
-          <label>To</label>
-          <input type="date" id="date-to">
-        </div>
-      </div>
-
       <div class="btn-row">
         <button class="btn btn-p" id="runbtn" onclick="run()">FIND BERLIN GIGS →</button>
         <button class="btn-s" onclick="selectAll()">Select all</button>
         <button class="btn-s" onclick="selectNone()">Deselect all</button>
-        <button class="btn-s" onclick="reset()">← New CSV</button>
+        <button class="btn-s" onclick="goStep('s1')">← Change list</button>
       </div>
     </div>
     <div class="status" id="statusbar"><div class="spin"></div><span id="stxt"></span></div>
@@ -233,190 +270,198 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
 
   <!-- STEP 3: Results -->
   <div class="step" id="s3">
-    <div class="res-hdr" style="flex-wrap:wrap;gap:10px">
+    <div class="res-hdr">
       <div class="res-title" id="restitle">BERLIN GIGS</div>
       <div class="res-count" id="rescount"></div>
       <div style="margin-left:auto;display:flex;gap:8px;align-items:center;padding-bottom:4px">
-        <button class="btn-s" onclick="goBack()">← Edit artists</button>
-        <button class="btn-s" onclick="editTimeframe()">⏱ Edit timeframe</button>
+        <button class="btn-s" onclick="toggleTimeframe()">⏱ Edit timeframe</button>
       </div>
     </div>
-    <div class="filter-row" style="flex-wrap:wrap;row-gap:10px">
+
+    <!-- Inline timeframe panel -->
+    <div class="timeframe-panel" id="timeframe-panel">
+      <div class="cal-header">
+        <button class="cal-nav" onclick="calNav(-1)">←</button>
+        <div class="cal-title" id="cal-title"></div>
+        <button class="cal-nav" onclick="calNav(1)">→</button>
+      </div>
+      <div class="cal-months" id="cal-months"></div>
+      <div class="cal-range-info" id="cal-range-info">Click a day to set start date</div>
+      <div class="cal-actions">
+        <button class="btn btn-p" id="cal-apply-btn" onclick="applyTimeframe()" disabled>APPLY →</button>
+        <button class="btn-s" onclick="toggleTimeframe()">Cancel</button>
+      </div>
+    </div>
+
+    <div class="filter-row">
       <span class="filter-lbl">Show:</span>
       <button class="tog on" id="fmatched" onclick="setFilter('matched')">Your artists only</button>
       <button class="tog" id="fall" onclick="setFilter('all')">All Berlin events</button>
-      <div style="display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap">
+      <div class="day-jump" style="margin-left:auto">
         <span class="filter-lbl">Jump to day:</span>
         <input type="date" id="day-picker" style="background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:11px;padding:5px 10px;outline:none;color-scheme:dark" oninput="filterByDay(this.value)">
-        <button class="btn-s" id="clear-day" onclick="clearDay()" style="display:none">✕ Clear</button>
+        <button class="btn-s" id="clear-day" onclick="clearDay()" style="display:none">✕</button>
       </div>
     </div>
-    <div id="reslist"></div>
-    <div class="no-res" id="nores">No Berlin events found for your artists in the selected period.</div>
+
+    <div class="results-wrap">
+      <div id="reslist"></div>
+      <div class="no-res" id="nores">No events found for your artists in this period.</div>
+    </div>
   </div>
 
 </div>
 
 <script>
-// ─── State ───────────────────────────────────────────────────────────────────
+// ─── State ────────────────────────────────────────────────────────────────────
 let artists=[], selected=new Set(), events=[], showAll=false, selectedDay='';
 let dateFrom='', dateTo='';
-let clerkInstance=null, currentUserId=null, savedArtistCount=0;
+let clerkInstance=null, currentUserId=null;
+let artistIndex=[], manualArtists=[];
+let calViewDate=new Date(), calStart=null, calEnd=null;
 
-// ─── Clerk Init ───────────────────────────────────────────────────────────────
+// ─── Init ─────────────────────────────────────────────────────────────────────
+function fmt(d){return d.toISOString().split('T')[0];}
+function defaultDates(){
+  const today=new Date();
+  const end=new Date(today);
+  end.setMonth(end.getMonth()+3);
+  return { from: fmt(today), to: fmt(end) };
+}
+
+// Load artist index
+fetch('/public/artists-index.json')
+  .then(r=>r.json())
+  .then(data=>{artistIndex=data;console.log(`Artist index loaded: ${artistIndex.length} artists`);})
+  .catch(()=>console.log('Artist index not loaded'));
+
+// Clerk init
 window.addEventListener('load', async () => {
   await window.Clerk.load();
   clerkInstance = window.Clerk;
-
   const user = clerkInstance.user;
-  if (user) {
-    onSignedIn(user);
-  } else {
-    showAuthScreen();
-  }
-
-  clerkInstance.addListener(({ user }) => {
-    if (user) onSignedIn(user);
+  if (user) await onSignedIn(user);
+  else showAuth();
+  clerkInstance.addListener(({user})=>{
+    if(user) onSignedIn(user);
     else onSignedOut();
   });
 });
 
-function showAuthScreen(){
+function showAuth(){
   document.getElementById('auth-screen').classList.add('active');
-  document.getElementById('s1').classList.remove('active');
+  document.getElementById('loading-screen').classList.remove('active');
   document.getElementById('header-right').style.display='none';
 }
 
 async function onSignedIn(user){
-  currentUserId = user.id;
+  currentUserId=user.id;
   document.getElementById('auth-screen').classList.remove('active');
   document.getElementById('header-right').style.display='flex';
-  document.getElementById('user-email').textContent = user.primaryEmailAddress?.emailAddress || user.username || '';
+  document.getElementById('user-email').textContent=user.primaryEmailAddress?.emailAddress||user.username||'';
 
-  // Check for saved artist list
-  await checkSavedList();
-}
-
-function onSignedOut(){
-  currentUserId = null;
-  showAuthScreen();
-  document.getElementById('header-right').style.display='none';
-}
-
-function openSignIn(){ clerkInstance.openSignIn({}); }
-function openSignUp(){ clerkInstance.openSignUp({}); }
-function signOut(){ clerkInstance.signOut(); }
-
-async function getToken(){
-  return await clerkInstance.session?.getToken();
-}
-
-// ─── Saved List ───────────────────────────────────────────────────────────────
-async function checkSavedList(){
+  // Check for saved list
+  document.getElementById('loading-screen').classList.add('active');
   try {
-    const token = await getToken();
-    const res = await fetch('/api/load', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    const data = await res.json();
-    if (data.artists && data.artists.length > 0) {
-      savedArtistCount = data.artists.length;
-      document.getElementById('saved-banner-text').textContent =
-        `You have ${savedArtistCount} saved artists — load them directly`;
-      document.getElementById('saved-banner').classList.add('visible');
-      goStep('s1');
+    const token=await getToken();
+    const res=await fetch('/api/load',{headers:{'Authorization':`Bearer ${token}`}});
+    const data=await res.json();
+    if(data.artists && data.artists.length>0){
+      artists=data.artists.map(name=>({name,pls:['Saved'],count:1}));
+      selected=new Set(artists.map(a=>a.name.toLowerCase()));
+      // Auto-run with 3 month default
+      const dates=defaultDates();
+      dateFrom=dates.from; dateTo=dates.to;
+      document.getElementById('loading-screen').classList.remove('active');
+      await runFetch();
     } else {
-      document.getElementById('saved-banner').classList.remove('visible');
+      document.getElementById('loading-screen').classList.remove('active');
       goStep('s1');
     }
-  } catch(e) {
+  } catch(e){
+    document.getElementById('loading-screen').classList.remove('active');
     goStep('s1');
   }
 }
 
-async function loadSaved(){
-  try {
-    const token = await getToken();
-    const res = await fetch('/api/load', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    const data = await res.json();
-    if (data.artists && data.artists.length > 0) {
-      artists = data.artists.map(name => ({ name, pls: ['Saved'], count: 1 }));
-      selected = new Set(artists.map(a => a.name.toLowerCase()));
-      renderReview();
-      setSaveStatus('saved', `${artists.length} artists saved`);
-      goStep('s2');
-    }
-  } catch(e) {
-    showErr('uerr', 'Could not load saved list: ' + e.message);
+function onSignedOut(){
+  currentUserId=null;
+  showAuth();
+}
+
+function openSignIn(){clerkInstance.openSignIn({});}
+function openSignUp(){clerkInstance.openSignUp({});}
+function signOut(){clerkInstance.signOut();}
+async function getToken(){return await clerkInstance.session?.getToken();}
+
+// ─── Artist Index / Autocomplete ──────────────────────────────────────────────
+function fuzzySearch(query, limit=8){
+  if(!query||query.length<2)return[];
+  const q=query.toLowerCase();
+  const exact=[], starts=[], contains=[];
+  for(const name of artistIndex){
+    const l=name.toLowerCase();
+    if(l===q) exact.push(name);
+    else if(l.startsWith(q)) starts.push(name);
+    else if(l.includes(q)) contains.push(name);
+    if(exact.length+starts.length+contains.length>=limit*3)break;
   }
+  return [...exact,...starts,...contains].slice(0,limit);
 }
 
-function ignoreSaved(){
-  document.getElementById('saved-banner').classList.remove('visible');
-}
+function setupAutocomplete(inputId, dropdownId, onSelect){
+  const input=document.getElementById(inputId);
+  const dropdown=document.getElementById(dropdownId);
+  let activeIdx=-1;
 
-async function saveArtists(){
-  if (!currentUserId) return;
-  setSaveStatus('saving', 'Saving...');
-  try {
-    const token = await getToken();
-    const artistNames = artists.map(a => a.name);
-    const res = await fetch('/api/save', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ artists: artistNames })
-    });
-    const data = await res.json();
-    if (data.success) {
-      setSaveStatus('saved', `${data.count} artists saved`);
-    } else {
-      setSaveStatus('', 'Save failed');
+  input.addEventListener('input',()=>{
+    const val=input.value.trim();
+    const results=fuzzySearch(val);
+    if(!results.length||!val){dropdown.style.display='none';return;}
+    dropdown.innerHTML=results.map((r,i)=>
+      `<div class="autocomplete-item" data-name="${esc(r)}" onclick="selectAutocomplete('${inputId}','${dropdownId}','${esc(r)}')">
+        <div class="dot"></div>${esc(r)}
+      </div>`
+    ).join('');
+    dropdown.style.display='block';
+    activeIdx=-1;
+  });
+
+  input.addEventListener('keydown',e=>{
+    const items=dropdown.querySelectorAll('.autocomplete-item');
+    if(e.key==='ArrowDown'){e.preventDefault();activeIdx=Math.min(activeIdx+1,items.length-1);items.forEach((el,i)=>el.classList.toggle('active',i===activeIdx));}
+    else if(e.key==='ArrowUp'){e.preventDefault();activeIdx=Math.max(activeIdx-1,0);items.forEach((el,i)=>el.classList.toggle('active',i===activeIdx));}
+    else if(e.key==='Enter'){
+      e.preventDefault();
+      if(activeIdx>=0&&items[activeIdx]){onSelect(items[activeIdx].dataset.name);}
+      else onSelect(input.value.trim());
+      dropdown.style.display='none';
     }
-  } catch(e) {
-    setSaveStatus('', 'Save failed: ' + e.message);
-  }
+    else if(e.key==='Escape'){dropdown.style.display='none';}
+  });
+
+  document.addEventListener('click',e=>{
+    if(!input.contains(e.target)&&!dropdown.contains(e.target))dropdown.style.display='none';
+  });
 }
 
-function setSaveStatus(state, text){
-  const dot = document.getElementById('save-dot');
-  const status = document.getElementById('save-status');
-  dot.className = 'save-dot' + (state ? ' ' + state : '');
-  status.textContent = text;
+function selectAutocomplete(inputId, dropdownId, name){
+  document.getElementById(inputId).value=name;
+  document.getElementById(dropdownId).style.display='none';
 }
 
-// ─── Dates ────────────────────────────────────────────────────────────────────
-function initDates(){
-  const today=new Date();
-  const end=new Date(today);
-  end.setMonth(end.getMonth()+1);
-  dateFrom=fmt(today); dateTo=fmt(end);
-  document.getElementById('date-from').value=dateFrom;
-  document.getElementById('date-to').value=dateTo;
-  document.getElementById('date-from').min=fmt(today);
-  const max=new Date(today);max.setMonth(max.getMonth()+6);
-  document.getElementById('date-to').max=fmt(max);
-}
-initDates();
-function fmt(d){return d.toISOString().split('T')[0];}
-function setQuick(n,unit,btn){
-  document.querySelectorAll('.qbtn').forEach(b=>b.classList.remove('on'));
-  btn.classList.add('on');
-  const today=new Date(); const end=new Date(today);
-  if(unit==='custom'){document.getElementById('custom-dates').style.display='grid';return;}
-  document.getElementById('custom-dates').style.display='none';
-  if(unit==='month') end.setMonth(end.getMonth()+n);
-  else if(unit==='week') end.setDate(end.getDate()+(n*7));
-  dateFrom=fmt(today); dateTo=fmt(end);
-  document.getElementById('date-from').value=dateFrom;
-  document.getElementById('date-to').value=dateTo;
-}
-document.getElementById('date-from').addEventListener('change',e=>{dateFrom=e.target.value;});
-document.getElementById('date-to').addEventListener('change',e=>{dateTo=e.target.value;});
+// Setup autocompletes
+window.addEventListener('load',()=>{
+  setTimeout(()=>{
+    setupAutocomplete('manual-input','autocomplete-dropdown',(name)=>{
+      document.getElementById('manual-input').value=name;
+    });
+    setupAutocomplete('addinput','add-dropdown',(name)=>{
+      document.getElementById('addinput').value=name;
+      addArtist();
+    });
+  },500);
+});
 
 // ─── Upload ───────────────────────────────────────────────────────────────────
 const uzone=document.getElementById('uzone');
@@ -432,23 +477,59 @@ function processFile(f){
     try{
       const rows=parseCSV(e.target.result);
       const ext=extractArtists(rows);
-      if(!ext.length){showErr('uerr','No artists found. Make sure this is a TuneMyMusic CSV or plain artist list.');return;}
+      if(!ext.length){showErr('uerr','No artists found. Check the file format.');return;}
       showErr('uerr','');
-      artists=ext;
-      selected=new Set(ext.map(a=>a.name.toLowerCase()));
-      setSaveStatus('','Not saved yet');
-      renderReview();
-      goStep('s2');
-    }catch(err){showErr('uerr','Could not parse CSV: '+err.message);}
+      artists=ext; selected=new Set(ext.map(a=>a.name.toLowerCase()));
+      setSaveStatus('','Not saved');
+      renderReview(); goStep('s2');
+    }catch(err){showErr('uerr','Could not parse: '+err.message);}
   };
   r.readAsText(f,'utf-8');
+}
+
+// Manual list on s1
+function addManualArtist(){
+  const inp=document.getElementById('manual-input');
+  const name=inp.value.trim(); if(!name)return;
+  if(!manualArtists.includes(name)){
+    manualArtists.push(name);
+    renderManualPills();
+  }
+  inp.value='';
+  document.getElementById('autocomplete-dropdown').style.display='none';
+  document.getElementById('manual-go-btn').disabled=manualArtists.length===0;
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  const inp=document.getElementById('manual-input');
+  if(inp)inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addManualArtist();}});
+});
+
+function renderManualPills(){
+  const c=document.getElementById('manual-pills');
+  c.innerHTML=manualArtists.map((a,i)=>
+    `<div class="pill on" style="font-size:12px;padding:4px 10px">${esc(a)} <span class="x" onclick="removeManual(${i})" style="opacity:1;cursor:pointer">×</span></div>`
+  ).join('');
+  document.getElementById('manual-go-btn').disabled=manualArtists.length===0;
+}
+
+function removeManual(i){
+  manualArtists.splice(i,1);
+  renderManualPills();
+}
+
+function useManualArtists(){
+  if(!manualArtists.length)return;
+  artists=manualArtists.map(name=>({name,pls:['Manual'],count:1}));
+  selected=new Set(artists.map(a=>a.name.toLowerCase()));
+  setSaveStatus('','Not saved');
+  renderReview(); goStep('s2');
 }
 
 // ─── CSV Parser ───────────────────────────────────────────────────────────────
 function parseCSV(text){
   text=text.replace(/^\uFEFF/,'');
   const lines=text.split(/\r?\n/).filter(l=>l.trim());
-  if(!lines.length)throw new Error('Empty file');
+  if(!lines.length)throw new Error('Empty');
   const first=lines[0].trim().replace(/^"|"$/g,'');
   const hasHeaders=/track name|artist name|playlist name|title|isrc/i.test(first);
   if(!hasHeaders)return lines.map(l=>({_d:l.trim().replace(/^"|"$/g,''),_p:'My List'})).filter(r=>r._d);
@@ -469,8 +550,6 @@ function csvLine(line){
   }
   r.push(c);return r;
 }
-
-// ─── Artist Extraction ────────────────────────────────────────────────────────
 function extractArtists(rows){
   const map={};
   function add(name,pl,direct){
@@ -478,8 +557,7 @@ function extractArtists(rows){
     if(isNoise(name))return;
     const k=name.toLowerCase().trim();
     if(!map[k])map[k]={name,pls:new Set(),count:0,direct:false};
-    map[k].pls.add(pl||'Unknown');
-    map[k].count++;
+    map[k].pls.add(pl||'Unknown'); map[k].count++;
     if(direct)map[k].direct=true;
   }
   for(const row of rows){
@@ -503,22 +581,10 @@ function fromTitle(t){
   m=t.match(/^([^@|]+?)\s*@\s*.+/);if(m&&m[1].length>2&&m[1].length<50)res.add(m[1].trim());
   m=t.match(/^([^|]+?)\s*\|\s*.+/);if(m&&m[1].length>2&&m[1].length<50)res.add(m[1].trim());
   m=t.match(/^([A-Za-z0-9_\s\.\-'üäöÜÄÖß]+?)\s+at\s+.+/i);if(m&&m[1].length>2&&m[1].length<40)res.add(m[1].trim());
-  const series=[
-    /Resident Advisor\s*-\s*RA\.\d+\s+(.+)/i,
-    /HEISSS Berlin\s*-\s*HEISSS Podcast \d+:\s*(.+)/i,
-    /kopfmix #\d+\s*-\s*(.+?)\s*-\s*.+/i,
-    /SEST Music\s*-\s*([\w\s]+?)\s+(?:Short|Long|EP|Mix)/i,
-    /Curiosity Pill\s*-\s*Pill Cast \d+\s*[|:]\s*(.+)/i,
-  ];
+  const series=[/Resident Advisor\s*-\s*RA\.\d+\s+(.+)/i,/HEISSS Berlin\s*-\s*HEISSS Podcast \d+:\s*(.+)/i,/kopfmix #\d+\s*-\s*(.+?)\s*-\s*.+/i,/SEST Music\s*-\s*([\w\s]+?)\s+(?:Short|Long|EP|Mix)/i,/Curiosity Pill\s*-\s*Pill Cast \d+\s*[|:]\s*(.+)/i];
   for(const p of series){m=t.match(p);if(m&&m[1].trim().length>2)res.add(m[1].trim());}
   m=t.match(/^(.+?)\s*[-–]\s*.+/);
-  if(m){
-    const raw=m[1].replace(/^\[[^\]]+\]\s*/,'').trim();
-    raw.split(/\s*[&]\s*|\s+x\s+|\s+feat\.?\s+/i).forEach(p=>{
-      const a=p.trim();
-      if(a.length>=3&&!['dj','the','and','feat','live','remix','edit','mix'].includes(a.toLowerCase()))res.add(a);
-    });
-  }
+  if(m){const raw=m[1].replace(/^\[[^\]]+\]\s*/,'').trim();raw.split(/\s*[&]\s*|\s+x\s+|\s+feat\.?\s+/i).forEach(p=>{const a=p.trim();if(a.length>=3&&!['dj','the','and','feat','live','remix','edit','mix'].includes(a.toLowerCase()))res.add(a);});}
   const re=/\(([^)]+?)\s+(bootleg|remix|edit|rework|flip|mix|regrooved?)\)/gi;
   let rm;while((rm=re.exec(t))!==null){const a=rm[1].replace(/^[✧★☆♦•\s🌹]+/,'').trim();if(a.length>2&&a.length<40)res.add(a);}
   const gm=/\(([A-Z][A-Z0-9]+)\s+(?:HARD|TRANCE|CLUB|DANCE|EURO|SPEED|BASS)\s+/g;
@@ -534,21 +600,27 @@ function isNoise(n){
   if(/^[\p{Emoji}\s]+$/u.test(n))return true;
   return false;
 }
+function isVerified(name){
+  const n=name.toLowerCase();
+  return artistIndex.some(a=>a.toLowerCase()===n);
+}
 
-// ─── Review UI ────────────────────────────────────────────────────────────────
+// ─── Review ───────────────────────────────────────────────────────────────────
 function renderReview(){
   const c=document.getElementById('pills');
-  document.getElementById('pillslbl').textContent=`Extracted artists (${artists.length})`;
+  document.getElementById('pillslbl').textContent=`Artists (${artists.length})`;
   document.getElementById('meta').innerHTML=`<span>${artists.length}</span> artists &nbsp;·&nbsp; <span>${selected.size}</span> selected`;
   c.innerHTML='';
   artists.forEach(a=>{
     const pill=document.createElement('div');
     const on=selected.has(a.name.toLowerCase());
-    pill.className='pill'+(on?' on':'');
-    pill.title=`${a.count}x · ${a.pls.join(', ')}`;
+    const verified=isVerified(a.name);
+    pill.className='pill'+(on?' on':'')+(verified?' verified':'');
+    pill.title=(verified?'✓ Confirmed Berlin artist — ':'')+ `${a.count}x · ${a.pls.join(', ')}`;
+    if(verified){const vd=document.createElement('div');vd.className='vdot';pill.appendChild(vd);}
     const ns=document.createElement('span');ns.textContent=a.name;
     const xb=document.createElement('span');xb.className='x';xb.textContent='×';
-    xb.onclick=e=>{e.stopPropagation();artists=artists.filter(b=>b.name!==a.name);selected.delete(a.name.toLowerCase());setSaveStatus('','Unsaved changes');renderReview();};
+    xb.onclick=e=>{e.stopPropagation();artists=artists.filter(b=>b.name!==a.name);selected.delete(a.name.toLowerCase());autoSave();renderReview();};
     pill.appendChild(ns);pill.appendChild(xb);
     pill.onclick=()=>{
       const k=a.name.toLowerCase();
@@ -564,20 +636,162 @@ function renderReview(){
 function updateBtn(){document.getElementById('runbtn').disabled=selected.size===0;}
 function selectAll(){artists.forEach(a=>selected.add(a.name.toLowerCase()));renderReview();}
 function selectNone(){selected.clear();renderReview();}
-function addManual(){
+function addArtist(){
   const inp=document.getElementById('addinput');
-  const name=inp.value.trim();
-  if(!name)return;
+  const name=inp.value.trim(); if(!name)return;
   if(!artists.find(a=>a.name.toLowerCase()===name.toLowerCase())){
     artists.push({name,pls:['Manual'],count:1});
     artists.sort((a,b)=>a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
   }
   selected.add(name.toLowerCase());
   inp.value='';
-  setSaveStatus('','Unsaved changes');
-  renderReview();
+  document.getElementById('add-dropdown').style.display='none';
+  autoSave(); renderReview();
 }
-document.getElementById('addinput').addEventListener('keydown',e=>{if(e.key==='Enter')addManual();});
+document.addEventListener('DOMContentLoaded',()=>{
+  const inp=document.getElementById('addinput');
+  if(inp)inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addArtist();}});
+});
+
+// ─── Save ─────────────────────────────────────────────────────────────────────
+function autoSave(){
+  clearTimeout(window._saveTimer);
+  window._saveTimer=setTimeout(()=>saveArtists(),1000);
+}
+async function saveArtists(){
+  if(!currentUserId)return;
+  setSaveStatus('saving','Saving...');
+  try{
+    const token=await getToken();
+    const res=await fetch('/api/save',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+      body:JSON.stringify({artists:artists.map(a=>a.name)})
+    });
+    const data=await res.json();
+    if(data.success)setSaveStatus('saved',`${data.count} artists saved`);
+    else setSaveStatus('','Save failed');
+  }catch(e){setSaveStatus('','Save failed');}
+}
+function setSaveStatus(state,text){
+  const dot=document.getElementById('save-dot');
+  const st=document.getElementById('save-status');
+  dot.className='save-dot'+(state?' '+state:'');
+  st.textContent=text;
+}
+
+// ─── Calendar ─────────────────────────────────────────────────────────────────
+function toggleTimeframe(){
+  const panel=document.getElementById('timeframe-panel');
+  const isOpen=panel.classList.contains('open');
+  if(!isOpen){
+    // Reset calendar to current range
+    calStart=dateFrom?new Date(dateFrom+'T12:00:00'):null;
+    calEnd=dateTo?new Date(dateTo+'T12:00:00'):null;
+    calViewDate=calStart?new Date(calStart):new Date();
+    calViewDate.setDate(1);
+    renderCalendar();
+    updateCalRangeInfo();
+  }
+  panel.classList.toggle('open');
+}
+
+function calNav(dir){
+  calViewDate.setMonth(calViewDate.getMonth()+dir);
+  renderCalendar();
+}
+
+function renderCalendar(){
+  const container=document.getElementById('cal-months');
+  const today=new Date(); today.setHours(0,0,0,0);
+  let html='';
+  for(let m=0;m<2;m++){
+    const d=new Date(calViewDate.getFullYear(), calViewDate.getMonth()+m, 1);
+    const monthName=d.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+    const firstDay=(d.getDay()+6)%7; // Mon=0
+    const daysInMonth=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
+    html+=`<div class="cal-month"><div class="cal-month-title">${monthName}</div><div class="cal-grid">`;
+    ['Mo','Tu','We','Th','Fr','Sa','Su'].forEach(dow=>html+=`<div class="cal-dow">${dow}</div>`);
+    for(let i=0;i<firstDay;i++)html+=`<div class="cal-day empty"></div>`;
+    for(let day=1;day<=daysInMonth;day++){
+      const date=new Date(d.getFullYear(),d.getMonth(),day);
+      date.setHours(0,0,0,0);
+      const dateStr=fmt(date);
+      const isPast=date<today;
+      const isToday=date.getTime()===today.getTime();
+      const isStart=calStart&&date.getTime()===calStart.getTime();
+      const isEnd=calEnd&&date.getTime()===calEnd.getTime();
+      const inRange=calStart&&calEnd&&date>calStart&&date<calEnd;
+      let cls='cal-day';
+      if(isPast)cls+=' past';
+      else{
+        if(isToday)cls+=' today';
+        if(isStart)cls+=' start';
+        if(isEnd)cls+=' end';
+        if(inRange)cls+=' inrange';
+        if(!isStart&&!isEnd&&!inRange)cls+='';
+      }
+      const onclick=isPast?'':` onclick="calDayClick('${dateStr}')"`;
+      html+=`<div class="${cls}"${onclick}>${day}</div>`;
+    }
+    html+=`</div></div>`;
+  }
+  container.innerHTML=html;
+  document.getElementById('cal-title').textContent=
+    new Date(calViewDate.getFullYear(), calViewDate.getMonth()).toLocaleDateString('en-GB',{month:'long',year:'numeric'})+
+    ' — '+
+    new Date(calViewDate.getFullYear(), calViewDate.getMonth()+1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+}
+
+function calDayClick(dateStr){
+  const clicked=new Date(dateStr+'T12:00:00');
+  if(!calStart||( calStart&&calEnd)){
+    // Start fresh selection
+    calStart=clicked; calEnd=null;
+  } else if(calStart&&!calEnd){
+    if(clicked.getTime()===calStart.getTime()){
+      // Same day = single day selection, set end = start
+      calEnd=clicked;
+    } else if(clicked<calStart){
+      // Clicked before start — restart
+      calStart=clicked; calEnd=null;
+    } else {
+      calEnd=clicked;
+    }
+  }
+  renderCalendar();
+  updateCalRangeInfo();
+  document.getElementById('cal-apply-btn').disabled=!calStart;
+}
+
+function updateCalRangeInfo(){
+  const info=document.getElementById('cal-range-info');
+  const btn=document.getElementById('cal-apply-btn');
+  if(!calStart){
+    info.innerHTML='Click a day to set start date';
+    btn.disabled=true;
+  } else if(!calEnd){
+    info.innerHTML=`Start: <span>${calStart.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</span> — click another day to set end`;
+    btn.disabled=true;
+  } else {
+    const same=calStart.getTime()===calEnd.getTime();
+    if(same){
+      info.innerHTML=`Single day: <span>${calStart.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}</span>`;
+    } else {
+      info.innerHTML=`<span>${calStart.toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</span> → <span>${calEnd.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</span>`;
+    }
+    btn.disabled=false;
+  }
+}
+
+async function applyTimeframe(){
+  if(!calStart)return;
+  dateFrom=fmt(calStart);
+  dateTo=calEnd?fmt(calEnd):fmt(calStart);
+  document.getElementById('timeframe-panel').classList.remove('open');
+  clearDay();
+  await runFetch();
+}
 
 // ─── RA Fetch ─────────────────────────────────────────────────────────────────
 async function fetchPage(page,df,dt){
@@ -586,52 +800,52 @@ async function fetchPage(page,df,dt){
   if(!res.ok)throw new Error(`RA returned ${res.status}`);
   return res.json();
 }
+
 async function run(){
-  const df=document.getElementById('date-from').value||dateFrom;
-  const dt=document.getElementById('date-to').value||dateTo;
-  if(!df||!dt){showErr('serr','Please select a date range.');return;}
-  if(df>dt){showErr('serr','Start date must be before end date.');return;}
-  setStatus('Fetching page 1...',true);
-  showErr('serr','');setProg(0,true);
+  const df=dateFrom||defaultDates().from;
+  const dt=dateTo||defaultDates().to;
+  dateFrom=df; dateTo=dt;
+  await runFetch();
+}
+
+async function runFetch(){
+  setStatus('Fetching Berlin events...',true);
+  showErr('serr',''); setProg(0,true);
   try{
-    const first=await fetchPage(1,df,dt);
+    const first=await fetchPage(1,dateFrom,dateTo);
     const total=first?.data?.eventListings?.totalResults||0;
     const listings1=first?.data?.eventListings?.data||[];
     const totalPages=Math.ceil(total/100);
-    setStatus(`${total} events found — fetching all pages...`,true);
-    setProg(10);
+    setStatus(`${total} events — fetching...`,true); setProg(10);
     let allEvts=[...listings1];
     if(totalPages>1){
       const remaining=Array.from({length:totalPages-1},(_,i)=>i+2);
-      const batchSize=6;
-      for(let i=0;i<remaining.length;i+=batchSize){
-        const batch=remaining.slice(i,i+batchSize);
-        const results=await Promise.all(batch.map(p=>fetchPage(p,df,dt)));
+      for(let i=0;i<remaining.length;i+=6){
+        const batch=remaining.slice(i,i+6);
+        const results=await Promise.all(batch.map(p=>fetchPage(p,dateFrom,dateTo)));
         results.forEach(r=>{allEvts=allEvts.concat(r?.data?.eventListings?.data||[]);});
         setProg(10+Math.round((allEvts.length/total)*85));
-        setStatus(`Fetched ${allEvts.length} / ${total} events...`,true);
+        setStatus(`Fetched ${allEvts.length} / ${total}...`,true);
       }
     }
     events=allEvts;
-    setProg(100);setTimeout(()=>setProg(0,false),500);
+    setProg(100); setTimeout(()=>setProg(0,false),500);
     setStatus('',false);
     const dp=document.getElementById('day-picker');
-    dp.min=df;dp.max=dt;
+    if(dp){dp.min=dateFrom;dp.max=dateTo;dp.value='';document.getElementById('clear-day').style.display='none';}
     selectedDay='';
-    document.getElementById('day-picker').value='';
-    document.getElementById('clear-day').style.display='none';
-    renderResults(false);
+    renderResults(showAll);
     goStep('s3');
   }catch(err){
-    setStatus('',false);setProg(0,false);
+    setStatus('',false); setProg(0,false);
     showErr('serr','Could not fetch events: '+err.message);
   }
 }
 
-// ─── Matching & Results ───────────────────────────────────────────────────────
+// ─── Results ──────────────────────────────────────────────────────────────────
 function clean(s){return s.toLowerCase().trim().replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ').trim();}
 function isHit(name){
-  const ra=name.toLowerCase().trim(),raC=clean(name);
+  const ra=name.toLowerCase().trim(), raC=clean(name);
   for(const s of selected){
     const sC=clean(s);
     if(ra===s||raC===sC)return true;
@@ -679,13 +893,10 @@ function filterByDay(val){
 }
 function clearDay(){
   selectedDay='';
-  document.getElementById('day-picker').value='';
+  const dp=document.getElementById('day-picker');
+  if(dp)dp.value='';
   document.getElementById('clear-day').style.display='none';
   renderResults(showAll);
-}
-function editTimeframe(){
-  goStep('s2');
-  setTimeout(()=>{const el=document.getElementById('quickbtns');if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},120);
 }
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
@@ -702,9 +913,13 @@ function fmtDate(s){
   return`${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]}${rel}`;
 }
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function goStep(id){document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
-function goBack(){clearDay();goStep('s2');}
-function reset(){artists=[];selected.clear();events=[];document.getElementById('finput').value='';initDates();goStep('s1');}
+function goStep(id){
+  document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
+  document.getElementById('auth-screen').classList.remove('active');
+  document.getElementById('loading-screen').classList.remove('active');
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
 function setStatus(msg,show){const b=document.getElementById('statusbar');document.getElementById('stxt').textContent=msg;b.classList.toggle('on',!!show);}
 function setProg(pct,show){const w=document.getElementById('progwrap'),b=document.getElementById('progbar');if(show!==undefined)w.classList.toggle('on',!!show);b.style.width=pct+'%';}
 function showErr(id,msg){const el=document.getElementById(id);el.textContent=msg;el.classList.toggle('on',!!msg);}
