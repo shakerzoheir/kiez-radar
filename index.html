@@ -1221,7 +1221,8 @@ async function handleSpotifyCallback(){
       })
     });
     const tok=await res.json();
-    if(!tok.access_token)throw new Error(tok.error_description||'Token exchange failed');
+    console.log('Spotify token response:', JSON.stringify(tok));
+    if(!tok.access_token)throw new Error(tok.error_description||JSON.stringify(tok)||'Token exchange failed');
     sessionStorage.setItem('spotify_token',tok.access_token);
     sessionStorage.removeItem('spotify_verifier');
     // Don't remove spotify_returning here — onSignedIn needs it
@@ -1307,9 +1308,10 @@ async function importSpotify(){
         const res=await fetch(url,{headers:{Authorization:'Bearer '+token}});
         const d=await res.json();
         if(d.error){
+          console.log('Spotify tracks error:', JSON.stringify(d));
           if(d.error.status===403||d.error.status===401){
             sessionStorage.removeItem('spotify_token');
-            throw new Error('Session expired — please reconnect Spotify');
+            throw new Error(`${d.error.status}: ${d.error.message} — please reconnect Spotify`);
           }
           throw new Error(d.error.message);
         }
