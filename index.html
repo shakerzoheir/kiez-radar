@@ -1241,8 +1241,22 @@ async function loadSpotifyPlaylists(token){
     while(url){
       const res=await fetch(url,{headers:{Authorization:'Bearer '+token}});
       const d=await res.json();
+      // Token expired
+      if(d.error){
+        if(d.error.status===401){
+          sessionStorage.removeItem('spotify_token');
+          document.getElementById('spotify-connect-btn').textContent='Connect Spotify →';
+          showSpotifyStatus('Session expired — please reconnect Spotify.');
+          return;
+        }
+        throw new Error(d.error.message||'Spotify API error');
+      }
       playlists=playlists.concat((d.items||[]).filter(p=>p&&p.tracks));
       url=d.next||null;
+    }
+    if(!playlists.length){
+      showSpotifyStatus('No playlists found on your account.');
+      return;
     }
     renderSpotifyPlaylists(playlists);
     showSpotifyStatus('');
