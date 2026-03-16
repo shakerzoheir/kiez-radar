@@ -24,6 +24,12 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
 .header-right{margin-left:auto;display:flex;align-items:center;gap:12px;padding-bottom:8px}
 .user-info{font-family:var(--mono);font-size:11px;color:var(--muted)}
 .main{max-width:1060px;margin:0 auto;padding:36px 40px 80px}
+.dropdown-wrap{position:relative}
+.dropdown-trigger{position:relative}
+.dropdown-menu{position:absolute;top:calc(100% + 6px);right:0;background:var(--surface);border:1px solid var(--border);min-width:160px;z-index:200;display:none}
+.dropdown-menu.open{display:block}
+.dropdown-item{font-family:var(--mono);font-size:11px;padding:10px 16px;cursor:pointer;color:var(--muted);letter-spacing:.05em;transition:all .15s;white-space:nowrap}
+.dropdown-item:hover{background:var(--surface2);color:var(--accent)}
 .step{display:none}.step.active{display:block}
 /* Auth */
 .auth-screen{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;gap:24px}
@@ -175,7 +181,13 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
   <div class="logo-sub">Berlin gig finder<br>SoundCloud × Resident Advisor</div>
   <div class="header-right" id="header-right" style="display:none">
     <span class="user-info" id="user-email"></span>
-    <button class="btn-s" onclick="goStep('s2')">Edit artists</button>
+    <div class="dropdown-wrap" id="artists-dropdown-wrap">
+      <button class="btn-s dropdown-trigger" onclick="toggleDropdown()">My Artists ▾</button>
+      <div class="dropdown-menu" id="artists-dropdown">
+        <div class="dropdown-item" onclick="viewArtists()">View my artists</div>
+        <div class="dropdown-item" onclick="editArtists()">Edit my artists</div>
+      </div>
+    </div>
     <button class="btn-s" onclick="signOut()">Sign out</button>
   </div>
 </header>
@@ -234,6 +246,11 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
         <button class="btn btn-p" id="manual-go-btn" onclick="useManualArtists()" disabled style="margin-top:auto">USE THIS LIST →</button>
       </div>
 
+    </div>
+    <!-- Existing artists on edit screen -->
+    <div id="existing-artists-section" style="display:none;margin-top:24px">
+      <div class="sec-label">Already in your list (<span id="existing-count"></span>)</div>
+      <div class="pills" id="existing-pills" style="max-height:160px"></div>
     </div>
     <div class="err" id="uerr"></div>
   </div>
@@ -307,6 +324,31 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
     <div class="results-wrap">
       <div id="reslist"></div>
       <div class="no-res" id="nores">No events found for your artists in this period.</div>
+    </div>
+  </div>
+
+  <!-- VIEW ARTISTS PANEL -->
+  <div class="step" id="s-view">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px">
+      <div style="font-family:var(--display);font-size:32px;letter-spacing:.04em">MY ARTISTS</div>
+      <button class="btn-s" onclick="closeView()">← Back</button>
+    </div>
+    <div class="panel">
+      <div class="meta" id="view-meta"></div>
+      <div class="save-row">
+        <div class="save-dot" id="view-save-dot"></div>
+        <span id="view-save-status">Saved</span>
+      </div>
+      <div class="add-row">
+        <div class="autocomplete-wrap" style="flex:1">
+          <input type="text" class="autocomplete-input" id="view-addinput" placeholder="Add artist..." autocomplete="off" spellcheck="false">
+          <div class="autocomplete-dropdown" id="view-add-dropdown"></div>
+        </div>
+        <button class="btn-s" onclick="viewAddArtist()">+ ADD</button>
+      </div>
+      <div id="view-dupe-msg" style="font-family:var(--mono);font-size:11px;color:var(--accent2);margin-bottom:10px;display:none"></div>
+      <div class="sec-label">Artists (<span id="view-count"></span>)</div>
+      <div class="pills" id="view-pills"></div>
     </div>
   </div>
 
@@ -482,8 +524,19 @@ function processFile(f){
       const ext=extractArtists(rows);
       if(!ext.length){showErr('uerr','No artists found. Check the file format.');return;}
       showErr('uerr','');
-      artists=ext; selected=new Set(ext.map(a=>a.name.toLowerCase()));
+      // Merge with existing, track dupes
+      const existingNames=new Set(artists.map(a=>a.name.toLowerCase()));
+      const newArtists=ext.filter(a=>!existingNames.has(a.name.toLowerCase()));
+      const dupeCount=ext.length-newArtists.length;
+      // Merge
+      const merged=[...artists];
+      newArtists.forEach(a=>{if(!merged.find(b=>b.name.toLowerCase()===a.name.toLowerCase()))merged.push(a);});
+      merged.sort((a,b)=>a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+      artists=merged;
+      selected=new Set(artists.map(a=>a.name.toLowerCase()));
       setSaveStatus('','Not saved');
+      if(dupeCount>0) showErr('uerr',`${newArtists.length} new artists added · ${dupeCount} already in your list (skipped)`);
+      else showErr('uerr','');
       renderReview(); goStep('s2');
     }catch(err){showErr('uerr','Could not parse: '+err.message);}
   };
@@ -494,6 +547,13 @@ function processFile(f){
 function addManualArtist(){
   const inp=document.getElementById('manual-input');
   const name=inp.value.trim(); if(!name)return;
+  // Check if already in saved list
+  if(artists.find(a=>a.name.toLowerCase()===name.toLowerCase())){
+    showErr('uerr',`"${name}" is already in your list`);
+    setTimeout(()=>showErr('uerr',''),3000);
+    inp.value='';
+    return;
+  }
   if(!manualArtists.includes(name)){
     manualArtists.push(name);
     renderManualPills();
@@ -654,11 +714,14 @@ function addArtist(){
 document.addEventListener('DOMContentLoaded',()=>{
   const inp=document.getElementById('addinput');
   if(inp)inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addArtist();}});
+  const vinp=document.getElementById('view-addinput');
+  if(vinp)vinp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();viewAddArtist();}});
 });
 
 // ─── Save ─────────────────────────────────────────────────────────────────────
 function autoSave(){
   clearTimeout(window._saveTimer);
+  setViewSaveStatus('saving','Saving...');
   window._saveTimer=setTimeout(()=>saveArtists(),1000);
 }
 async function saveArtists(){
@@ -672,7 +735,7 @@ async function saveArtists(){
       body:JSON.stringify({artists:artists.map(a=>a.name)})
     });
     const data=await res.json();
-    if(data.success)setSaveStatus('saved',`${data.count} artists saved`);
+    if(data.success){setSaveStatus('saved',`${data.count} artists saved`);setViewSaveStatus('saved','Saved');}
     else setSaveStatus('','Save failed');
   }catch(e){setSaveStatus('','Save failed');}
 }
@@ -923,6 +986,119 @@ function goStep(id){
   document.getElementById(id).classList.add('active');
   window.scrollTo(0,0);
 }
+// ─── Dropdown ─────────────────────────────────────────────────────────────────
+function toggleDropdown(){
+  document.getElementById('artists-dropdown').classList.toggle('open');
+}
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('artists-dropdown-wrap');
+  if(wrap && !wrap.contains(e.target)){
+    document.getElementById('artists-dropdown').classList.remove('open');
+  }
+});
+
+function viewArtists(){
+  document.getElementById('artists-dropdown').classList.remove('open');
+  renderViewPanel();
+  // Store where we came from
+  window._prevStep = document.querySelector('.step.active')?.id || 's3';
+  goStep('s-view');
+}
+
+function editArtists(){
+  document.getElementById('artists-dropdown').classList.remove('open');
+  showExistingArtists();
+  goStep('s1');
+}
+
+function showExistingArtists(){
+  const section = document.getElementById('existing-artists-section');
+  const pillsEl = document.getElementById('existing-pills');
+  const countEl = document.getElementById('existing-count');
+  if(!artists.length){ section.style.display='none'; return; }
+  section.style.display='block';
+  countEl.textContent = artists.length;
+  pillsEl.innerHTML = artists.map(a =>
+    `<div class="pill on" style="cursor:default;pointer-events:none;font-size:12px;padding:4px 10px">${esc(a.name)}</div>`
+  ).join('');
+}
+
+function closeView(){
+  goStep(window._prevStep || 's3');
+}
+
+function renderViewPanel(){
+  const c = document.getElementById('view-pills');
+  document.getElementById('view-count').textContent = artists.length;
+  document.getElementById('view-meta').innerHTML = `<span>${artists.length}</span> artists &nbsp;·&nbsp; <span>${selected.size}</span> selected`;
+  setViewSaveStatus('saved', 'Saved');
+  c.innerHTML = '';
+  artists.forEach(a => {
+    const pill = document.createElement('div');
+    const on = selected.has(a.name.toLowerCase());
+    const verified = isVerified(a.name);
+    pill.className = 'pill' + (on ? ' on' : '') + (verified ? ' verified' : '');
+    pill.title = (verified ? '✓ Confirmed Berlin artist — ' : '') + `${a.count}x`;
+    if(verified){const vd=document.createElement('div');vd.className='vdot';pill.appendChild(vd);}
+    const ns = document.createElement('span'); ns.textContent = a.name;
+    const xb = document.createElement('span'); xb.className = 'x'; xb.textContent = '×';
+    xb.onclick = e => {
+      e.stopPropagation();
+      artists = artists.filter(b => b.name !== a.name);
+      selected.delete(a.name.toLowerCase());
+      autoSave();
+      renderViewPanel();
+      renderReview();
+    };
+    pill.appendChild(ns); pill.appendChild(xb);
+    pill.onclick = () => {
+      const k = a.name.toLowerCase();
+      if(selected.has(k)){selected.delete(k);pill.classList.remove('on');}
+      else{selected.add(k);pill.classList.add('on');}
+      document.getElementById('view-meta').innerHTML = `<span>${artists.length}</span> artists &nbsp;·&nbsp; <span>${selected.size}</span> selected`;
+    };
+    c.appendChild(pill);
+  });
+
+  // Setup autocomplete for view panel
+  setupAutocomplete('view-addinput','view-add-dropdown',(name)=>{
+    document.getElementById('view-addinput').value = name;
+    viewAddArtist();
+  });
+}
+
+function viewAddArtist(){
+  const inp = document.getElementById('view-addinput');
+  const name = inp.value.trim(); if(!name) return;
+  const dupeMsg = document.getElementById('view-dupe-msg');
+
+  // Check for duplicate
+  if(artists.find(a => a.name.toLowerCase() === name.toLowerCase())){
+    dupeMsg.textContent = `"${name}" is already in your list`;
+    dupeMsg.style.display = 'block';
+    clearTimeout(window._dupeTimer);
+    window._dupeTimer = setTimeout(() => { dupeMsg.style.display = 'none'; }, 3000);
+    inp.value = '';
+    return;
+  }
+
+  artists.push({name, pls:['Manual'], count:1});
+  artists.sort((a,b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+  selected.add(name.toLowerCase());
+  inp.value = '';
+  document.getElementById('view-add-dropdown').style.display = 'none';
+  autoSave();
+  renderViewPanel();
+  renderReview();
+}
+
+function setViewSaveStatus(state, text){
+  const dot = document.getElementById('view-save-dot');
+  const st = document.getElementById('view-save-status');
+  if(dot) dot.className = 'save-dot' + (state ? ' ' + state : '');
+  if(st) st.textContent = text;
+}
+
 function setStatus(msg,show){const b=document.getElementById('statusbar');document.getElementById('stxt').textContent=msg;b.classList.toggle('on',!!show);}
 function setProg(pct,show){const w=document.getElementById('progwrap'),b=document.getElementById('progbar');if(show!==undefined)w.classList.toggle('on',!!show);b.style.width=pct+'%';}
 function showErr(id,msg){const el=document.getElementById(id);el.textContent=msg;el.classList.toggle('on',!!msg);}
