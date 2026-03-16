@@ -410,6 +410,11 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
 // ─── State ────────────────────────────────────────────────────────────────────
 let artists=[], selected=new Set(), events=[], showAll=false, selectedDay='';
 let dateFrom='', dateTo='';
+// Detect Spotify callback synchronously before any async code runs
+// Spotify returns ?code=... and we'll have a verifier in sessionStorage
+if(window.location.search.includes('code=') && sessionStorage.getItem('spotify_verifier')){
+  sessionStorage.setItem('spotify_returning','1');
+}
 let clerkInstance=null, currentUserId=null, appInitialized=false;
 let artistIndex=[], manualArtists=[];
 let calViewDate=new Date(), calStart=null, calEnd=null;
