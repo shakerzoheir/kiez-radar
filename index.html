@@ -44,7 +44,7 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
 .loading-spin{width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
 /* Upload screen */
 .upload-heading{font-family:var(--display);font-size:36px;letter-spacing:.04em;color:var(--text);margin-bottom:32px}
-.upload-options{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px}
+.upload-options{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;margin-bottom:24px}
 .upload-card{background:var(--surface);border:1px solid var(--border);padding:28px;display:flex;flex-direction:column;gap:16px}
 .upload-card-title{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)}
 .upload-steps{list-style:none;display:flex;flex-direction:column;gap:10px}
@@ -275,6 +275,16 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
           <div id="manual-pills" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
         </div>
         <button class="btn btn-p" id="manual-go-btn" onclick="useManualArtists()" disabled style="margin-top:auto">USE THIS LIST →</button>
+      </div>
+
+      <!-- Option 3: Spotify -->
+      <div class="upload-card">
+        <div class="upload-card-title">// Option 3 — Import from Spotify</div>
+        <div class="manual-hint" style="margin-bottom:16px">Connect your Spotify account, pick playlists, and we'll extract all the artists automatically.</div>
+        <button class="btn btn-p" id="spotify-connect-btn" onclick="connectSpotify()" style="margin-bottom:12px">Connect Spotify →</button>
+        <div id="spotify-status" style="font-family:var(--mono);font-size:11px;color:var(--muted);display:none"></div>
+        <div id="spotify-playlists" style="display:none;margin-top:12px"></div>
+        <button class="btn btn-p" id="spotify-import-btn" onclick="importSpotify()" disabled style="display:none;margin-top:12px">Import selected playlists →</button>
       </div>
 
     </div>
@@ -607,6 +617,14 @@ function addManualArtist(){
 document.addEventListener('DOMContentLoaded',()=>{
   const inp=document.getElementById('manual-input');
   if(inp)inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addManualArtist();}});
+  // Handle Spotify OAuth callback
+  if(window.location.search.includes('code=')) handleSpotifyCallback();
+  // Restore Spotify session if token exists
+  const tok=sessionStorage.getItem('spotify_token');
+  if(tok){
+    document.getElementById('spotify-connect-btn').textContent='Reconnect Spotify';
+    loadSpotifyPlaylists(tok);
+  }
 });
 
 function renderManualPills(){
@@ -1124,6 +1142,155 @@ function copyShareLink(e){
     btn.textContent='Copied!';
     setTimeout(()=>btn.textContent=orig, 1500);
   });
+}
+
+// ─── Spotify OAuth ────────────────────────────────────────────────────────────
+const SPOTIFY_CLIENT_ID = '32c98553ffd841288b1c719fa50d9880';
+const SPOTIFY_REDIRECT = 'https://kiez-radar.vercel.app/callback';
+const SPOTIFY_SCOPES = 'playlist-read-private playlist-read-collaborative';
+
+function generateCodeVerifier(){
+  const arr=new Uint8Array(32);
+  crypto.getRandomValues(arr);
+  return btoa(String.fromCharCode(...arr)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+}
+async function generateCodeChallenge(verifier){
+  const data=new TextEncoder().encode(verifier);
+  const digest=await crypto.subtle.digest('SHA-256',data);
+  return btoa(String.fromCharCode(...new Uint8Array(digest))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+}
+
+async function connectSpotify(){
+  const verifier=generateCodeVerifier();
+  sessionStorage.setItem('spotify_verifier',verifier);
+  const challenge=await generateCodeChallenge(verifier);
+  const params=new URLSearchParams({
+    client_id:SPOTIFY_CLIENT_ID,
+    response_type:'code',
+    redirect_uri:SPOTIFY_REDIRECT,
+    scope:SPOTIFY_SCOPES,
+    code_challenge_method:'S256',
+    code_challenge:challenge,
+  });
+  window.location.href='https://accounts.spotify.com/authorize?'+params;
+}
+
+async function handleSpotifyCallback(){
+  const params=new URLSearchParams(window.location.search);
+  const code=params.get('code');
+  if(!code)return;
+  // Clean URL
+  window.history.replaceState({},'','/');
+  const verifier=sessionStorage.getItem('spotify_verifier');
+  if(!verifier){showSpotifyStatus('Auth error — please try again');return;}
+  showSpotifyStatus('Connecting to Spotify...');
+  try{
+    const res=await fetch('https://accounts.spotify.com/api/token',{
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams({
+        grant_type:'authorization_code',
+        code,
+        redirect_uri:SPOTIFY_REDIRECT,
+        client_id:SPOTIFY_CLIENT_ID,
+        code_verifier:verifier,
+      })
+    });
+    const tok=await res.json();
+    if(!tok.access_token)throw new Error(tok.error_description||'Token exchange failed');
+    sessionStorage.setItem('spotify_token',tok.access_token);
+    sessionStorage.removeItem('spotify_verifier');
+    goStep('s1');
+    await loadSpotifyPlaylists(tok.access_token);
+  }catch(e){
+    showSpotifyStatus('Failed: '+e.message);
+  }
+}
+
+async function loadSpotifyPlaylists(token){
+  showSpotifyStatus('Loading your playlists...');
+  document.getElementById('spotify-playlists').style.display='none';
+  document.getElementById('spotify-import-btn').style.display='none';
+  try{
+    let playlists=[], url='https://api.spotify.com/v1/me/playlists?limit=50';
+    while(url){
+      const res=await fetch(url,{headers:{Authorization:'Bearer '+token}});
+      const d=await res.json();
+      playlists=playlists.concat(d.items||[]);
+      url=d.next||null;
+    }
+    renderSpotifyPlaylists(playlists);
+    showSpotifyStatus('');
+  }catch(e){
+    showSpotifyStatus('Could not load playlists: '+e.message);
+  }
+}
+
+function renderSpotifyPlaylists(playlists){
+  const wrap=document.getElementById('spotify-playlists');
+  wrap.innerHTML='<div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:8px;letter-spacing:.08em">SELECT PLAYLISTS TO IMPORT</div>';
+  playlists.forEach(p=>{
+    const row=document.createElement('label');
+    row.style.cssText='display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;font-family:var(--mono);font-size:11px;color:var(--text);border-bottom:1px solid var(--border)';
+    row.innerHTML=`<input type="checkbox" data-id="${p.id}" data-total="${p.tracks.total}" style="accent-color:var(--accent)"><span>${esc(p.name)}</span><span style="color:var(--muted);margin-left:auto">${p.tracks.total} tracks</span>`;
+    wrap.appendChild(row);
+  });
+  wrap.style.display='block';
+  // Show import button when any checkbox ticked
+  wrap.addEventListener('change',()=>{
+    const any=[...wrap.querySelectorAll('input[type=checkbox]')].some(c=>c.checked);
+    const btn=document.getElementById('spotify-import-btn');
+    btn.style.display='block';
+    btn.disabled=!any;
+  });
+}
+
+async function importSpotify(){
+  const token=sessionStorage.getItem('spotify_token');
+  if(!token){showSpotifyStatus('Not connected — please reconnect Spotify');return;}
+  const checked=[...document.querySelectorAll('#spotify-playlists input:checked')];
+  if(!checked.length)return;
+  const btn=document.getElementById('spotify-import-btn');
+  btn.disabled=true; btn.textContent='Importing...';
+  const newArtists=new Set();
+  try{
+    for(const cb of checked){
+      const pid=cb.dataset.id;
+      showSpotifyStatus(`Fetching playlist...`);
+      let url=`https://api.spotify.com/v1/playlists/${pid}/tracks?limit=100&fields=next,items(track(artists(name)))`;
+      while(url){
+        const res=await fetch(url,{headers:{Authorization:'Bearer '+token}});
+        const d=await res.json();
+        (d.items||[]).forEach(item=>{
+          (item?.track?.artists||[]).forEach(a=>{if(a.name)newArtists.add(a.name.trim());});
+        });
+        url=d.next||null;
+      }
+    }
+    // Merge into selected, skip dupes
+    let added=0;
+    newArtists.forEach(name=>{
+      if(!selected.some(s=>s.toLowerCase()===name.toLowerCase())){
+        selected.push(name); added++;
+      }
+    });
+    showSpotifyStatus(`Done — ${added} new artists added from ${checked.length} playlist${checked.length>1?'s':''}.`);
+    btn.textContent='Import selected playlists →';
+    btn.disabled=false;
+    scheduleSave();
+    // Go to review step
+    renderPills(); updateMeta(); goStep('s2');
+  }catch(e){
+    showSpotifyStatus('Import failed: '+e.message);
+    btn.textContent='Import selected playlists →';
+    btn.disabled=false;
+  }
+}
+
+function showSpotifyStatus(msg){
+  const el=document.getElementById('spotify-status');
+  el.textContent=msg;
+  el.style.display=msg?'block':'none';
 }
 
 function filterByDay(val){
