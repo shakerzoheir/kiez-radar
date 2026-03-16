@@ -1306,7 +1306,13 @@ async function importSpotify(){
       while(url){
         const res=await fetch(url,{headers:{Authorization:'Bearer '+token}});
         const d=await res.json();
-        if(d.error) throw new Error(d.error.message);
+        if(d.error){
+          if(d.error.status===403||d.error.status===401){
+            sessionStorage.removeItem('spotify_token');
+            throw new Error('Session expired — please reconnect Spotify');
+          }
+          throw new Error(d.error.message);
+        }
         (d.items||[]).forEach(item=>{
           const track=item?.track;
           if(!track) return;
