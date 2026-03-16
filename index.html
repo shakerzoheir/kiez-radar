@@ -1255,7 +1255,11 @@ async function loadSpotifyPlaylists(token){
       url=d.next||null;
     }
     if(!playlists.length){
-      showSpotifyStatus('No playlists found on your account.');
+      // Likely expired token returning empty — clear and re-auth
+      sessionStorage.removeItem('spotify_token');
+      document.getElementById('spotify-connect-btn').textContent='Connect Spotify →';
+      showSpotifyStatus('Could not load playlists — reconnecting...');
+      setTimeout(()=>connectSpotify(), 1200);
       return;
     }
     renderSpotifyPlaylists(playlists);
