@@ -472,6 +472,7 @@ async function onSignedIn(user){
       selected=new Set(artists.map(a=>a.name.toLowerCase()));
       // If returning from Spotify OAuth, go to upload screen instead of auto-running
       if(sessionStorage.getItem('spotify_returning')||window.location.search.includes('code=')){
+        sessionStorage.removeItem('spotify_returning');
         document.getElementById('loading-screen').classList.remove('active');
         goStep('s1');
       } else {
@@ -1212,7 +1213,7 @@ async function handleSpotifyCallback(){
     if(!tok.access_token)throw new Error(tok.error_description||'Token exchange failed');
     sessionStorage.setItem('spotify_token',tok.access_token);
     sessionStorage.removeItem('spotify_verifier');
-    sessionStorage.removeItem('spotify_returning');
+    // Don't remove spotify_returning here — onSignedIn needs it
     goStep('s1');
     await loadSpotifyPlaylists(tok.access_token);
   }catch(e){
