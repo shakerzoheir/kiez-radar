@@ -181,11 +181,11 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
   <div class="logo-sub">Berlin gig finder<br>SoundCloud × Resident Advisor</div>
   <div class="header-right" id="header-right" style="display:none">
     <span class="user-info" id="user-email"></span>
+    <button class="btn-s" onclick="goMyGigs()">My Gigs</button>
     <div class="dropdown-wrap" id="artists-dropdown-wrap">
       <button class="btn-s dropdown-trigger" onclick="toggleDropdown()">My Artists ▾</button>
       <div class="dropdown-menu" id="artists-dropdown">
-        <div class="dropdown-item" onclick="goMyGigs()">My Gigs</div>
-        <div class="dropdown-item" style="border-top:1px solid var(--border);margin-top:4px;padding-top:12px" onclick="viewArtists()">View my artists</div>
+        <div class="dropdown-item" onclick="viewArtists()">View my artists</div>
         <div class="dropdown-item" onclick="editArtists()">Edit my artists</div>
       </div>
     </div>
@@ -292,13 +292,19 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
       <div class="res-title" id="restitle">BERLIN GIGS</div>
       <div class="res-count" id="rescount"></div>
       <div style="margin-left:auto;display:flex;gap:8px;align-items:center;padding-bottom:4px">
-        <button class="btn-s" onclick="toggleTimeframe()">⏱ Edit timeframe</button>
+        <button class="btn-s" id="range-btn" onclick="toggleTimeframe(event)">Mar — Jun 2026</button>
       </div>
     </div>
 
     <!-- Inline timeframe panel -->
     <div class="timeframe-panel" id="timeframe-panel">
-      <div class="cal-header">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">
+      <button class="qbtn on" id="qbtn-1m" onclick="calQuick(1,'month',this)">1 month</button>
+      <button class="qbtn" id="qbtn-3m" onclick="calQuick(3,'month',this)">3 months</button>
+      <button class="qbtn" id="qbtn-6m" onclick="calQuick(6,'month',this)">6 months</button>
+      <button class="qbtn" id="qbtn-2w" onclick="calQuick(2,'week',this)">2 weeks</button>
+    </div>
+    <div class="cal-header">
         <button class="cal-nav" onclick="calNav(-1)">←</button>
         <div class="cal-title" id="cal-title"></div>
         <button class="cal-nav" onclick="calNav(1)">→</button>
@@ -316,9 +322,8 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
       <button class="tog on" id="fmatched" onclick="setFilter('matched')">Your artists only</button>
       <button class="tog" id="fall" onclick="setFilter('all')">All Berlin events</button>
       <div class="day-jump" style="margin-left:auto">
-        <span class="filter-lbl">Jump to day:</span>
-        <input type="date" id="day-picker" style="background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:11px;padding:5px 10px;outline:none;color-scheme:dark" oninput="filterByDay(this.value)">
-        <button class="btn-s" id="clear-day" onclick="clearDay()" style="display:none">✕</button>
+        <input type="date" id="day-picker" style="display:none" oninput="filterByDay(this.value)">
+        <button class="btn-s" id="clear-day" onclick="clearDay()" style="display:none">✕ Clear day</button>
       </div>
     </div>
 
@@ -748,19 +753,35 @@ function setSaveStatus(state,text){
 }
 
 // ─── Calendar ─────────────────────────────────────────────────────────────────
-function toggleTimeframe(){
+function toggleTimeframe(e){
+  if(e) e.stopPropagation();
   const panel=document.getElementById('timeframe-panel');
   const isOpen=panel.classList.contains('open');
   if(!isOpen){
-    // Reset calendar to current range
     calStart=dateFrom?new Date(dateFrom+'T12:00:00'):null;
     calEnd=dateTo?new Date(dateTo+'T12:00:00'):null;
     calViewDate=calStart?new Date(calStart):new Date();
     calViewDate.setDate(1);
     renderCalendar();
     updateCalRangeInfo();
+    panel.classList.add('open');
+    // Close on outside click
+    setTimeout(()=>{
+      document.addEventListener('click', closeTimeframeOutside);
+    }, 50);
+  } else {
+    panel.classList.remove('open');
+    document.removeEventListener('click', closeTimeframeOutside);
   }
-  panel.classList.toggle('open');
+}
+
+function closeTimeframeOutside(e){
+  const panel=document.getElementById('timeframe-panel');
+  const btn=document.getElementById('range-btn');
+  if(!panel.contains(e.target) && !btn.contains(e.target)){
+    panel.classList.remove('open');
+    document.removeEventListener('click', closeTimeframeOutside);
+  }
 }
 
 function calNav(dir){
@@ -831,6 +852,20 @@ function calDayClick(dateStr){
   document.getElementById('cal-apply-btn').disabled=!calStart;
 }
 
+function calQuick(n, unit, btn){
+  document.querySelectorAll('.qbtn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  const today=new Date(); today.setHours(0,0,0,0);
+  calStart=new Date(today);
+  calEnd=new Date(today);
+  if(unit==='month') calEnd.setMonth(calEnd.getMonth()+n);
+  else if(unit==='week') calEnd.setDate(calEnd.getDate()+(n*7));
+  calViewDate=new Date(today); calViewDate.setDate(1);
+  renderCalendar();
+  updateCalRangeInfo();
+  document.getElementById('cal-apply-btn').disabled=false;
+}
+
 function updateCalRangeInfo(){
   const info=document.getElementById('cal-range-info');
   const btn=document.getElementById('cal-apply-btn');
@@ -856,8 +891,29 @@ async function applyTimeframe(){
   dateFrom=fmt(calStart);
   dateTo=calEnd?fmt(calEnd):fmt(calStart);
   document.getElementById('timeframe-panel').classList.remove('open');
+  document.removeEventListener('click', closeTimeframeOutside);
+  updateRangeBtn();
   clearDay();
   await runFetch();
+}
+
+function updateRangeBtn(){
+  const btn=document.getElementById('range-btn');
+  if(!btn||!dateFrom)return;
+  const from=new Date(dateFrom+'T12:00:00');
+  const to=new Date(dateTo+'T12:00:00');
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const sameMonth=from.getMonth()===to.getMonth()&&from.getFullYear()===to.getFullYear();
+  const sameDay=dateFrom===dateTo;
+  if(sameDay){
+    btn.textContent=`${from.getDate()} ${months[from.getMonth()]} ${from.getFullYear()}`;
+  } else if(sameMonth){
+    btn.textContent=`${months[from.getMonth()]} ${from.getFullYear()}`;
+  } else if(from.getFullYear()===to.getFullYear()){
+    btn.textContent=`${months[from.getMonth()]} — ${months[to.getMonth()]} ${to.getFullYear()}`;
+  } else {
+    btn.textContent=`${months[from.getMonth()]} ${from.getFullYear()} — ${months[to.getMonth()]} ${to.getFullYear()}`;
+  }
 }
 
 // ─── RA Fetch ─────────────────────────────────────────────────────────────────
@@ -902,6 +958,7 @@ async function runFetch(){
     if(dp){dp.min=dateFrom;dp.max=dateTo;dp.value='';document.getElementById('clear-day').style.display='none';}
     selectedDay='';
     renderResults(showAll);
+    updateRangeBtn();
     goStep('s3');
   }catch(err){
     setStatus('',false); setProg(0,false);
