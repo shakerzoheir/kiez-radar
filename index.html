@@ -957,9 +957,18 @@ function updateRangeBtn(){
 // ─── RA Fetch ─────────────────────────────────────────────────────────────────
 async function fetchPage(page,df,dt){
   const q=`{eventListings(filters:{areas:{eq:34},listingDate:{gte:"${df}",lte:"${dt}"}},pageSize:100,page:${page}){data{event{title date venue{name}artists{name}contentUrl}}totalResults}}`;
-  const res=await fetch('/api/ra',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:q})});
-  if(!res.ok)throw new Error(`RA returned ${res.status}`);
-  return res.json();
+  const ctrl=new AbortController();
+  const timer=setTimeout(()=>ctrl.abort(),20000);
+  try{
+    const res=await fetch('/api/ra',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:q}),signal:ctrl.signal});
+    clearTimeout(timer);
+    if(!res.ok)throw new Error(`RA returned ${res.status}`);
+    return res.json();
+  }catch(e){
+    clearTimeout(timer);
+    if(e.name==='AbortError')throw new Error('Request timed out — RA may be slow or down');
+    throw e;
+  }
 }
 
 async function run(){
@@ -1000,7 +1009,12 @@ async function runFetch(){
     goStep('s3');
   }catch(err){
     setStatus('',false); setProg(0,false);
-    showErr('serr','Could not fetch events: '+err.message);
+    const msg=err.message||'Unknown error';
+    const isTimeout=msg.includes('timed out')||msg.includes('timeout');
+    const friendly=isTimeout
+      ? 'RA is taking too long to respond — it may be down or overloaded.'
+      : `Could not reach RA (${msg}).`;
+    showErr('serr',`${friendly} <button onclick="runFetch()" style="font-family:var(--mono);font-size:10px;background:none;border:1px solid var(--border);color:var(--accent);cursor:pointer;padding:3px 10px;margin-left:8px;letter-spacing:.06em">Retry →</button>`);
   }
 }
 
@@ -1287,7 +1301,7 @@ function setViewSaveStatus(state, text){
 
 function setStatus(msg,show){const b=document.getElementById('statusbar');document.getElementById('stxt').textContent=msg;b.classList.toggle('on',!!show);}
 function setProg(pct,show){const w=document.getElementById('progwrap'),b=document.getElementById('progbar');if(show!==undefined)w.classList.toggle('on',!!show);b.style.width=pct+'%';}
-function showErr(id,msg){const el=document.getElementById(id);el.textContent=msg;el.classList.toggle('on',!!msg);}
+function showErr(id,msg){const el=document.getElementById(id);el.innerHTML=msg;el.classList.toggle('on',!!msg);}
 </script>
   <!-- Share popup -->
   <div class="share-popup" id="share-popup">
