@@ -151,11 +151,11 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
 /* Events */
 .results-wrap{margin-top:24px}
 .date-grp{margin-bottom:30px}
-.date-lbl{font-family:var(--mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent2);padding:7px 0;border-bottom:1px solid var(--border);margin-bottom:2px}
+.date-lbl{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent2);padding:9px 0;border-bottom:1px solid var(--border);margin-bottom:2px}
 .ecard{display:grid;grid-template-columns:1fr auto;gap:14px;padding:16px 0;border-bottom:1px solid var(--border);transition:all .12s;align-items:start}
 .ecard:hover{background:var(--surface);padding-left:13px;padding-right:13px;margin:0 -13px}
-.etitle{font-family:var(--sans);font-weight:500;font-size:15px;color:var(--text);margin-bottom:5px;line-height:1.3}
-.evenue{font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:9px}
+.etitle{font-family:var(--sans);font-weight:500;font-size:16px;color:var(--text);margin-bottom:6px;line-height:1.3}
+.evenue{font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:10px}
 .etags{display:flex;flex-wrap:wrap;gap:3px}
 .tag{font-family:var(--mono);font-size:10px;padding:2px 7px;background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
 .tag.hit{background:rgba(232,255,0,.1);color:var(--accent);border-color:rgba(232,255,0,.3)}
@@ -165,12 +165,35 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
 .mbadge{font-family:var(--mono);font-size:10px;color:var(--accent);display:block;margin-top:5px;text-align:right}
 .no-res{font-family:var(--mono);font-size:13px;color:var(--muted);padding:44px 0;text-align:center;display:none}
 @media(max-width:700px){
-  header{padding:24px 18px 18px;gap:14px}
-  .main{padding:22px 18px 56px}
+  header{padding:20px 16px 16px;gap:10px;align-items:flex-start}
+  .logo{font-size:clamp(44px,14vw,72px)}
+  .logo-sub{font-size:10px}
+  .header-right{width:100%;margin-left:0;gap:8px;flex-wrap:wrap;padding-bottom:0}
+  .user-info{font-size:10px;width:100%;margin-bottom:2px}
+  .btn-s{font-size:10px;padding:7px 12px}
+  .main{padding:20px 16px 56px}
   .upload-options{grid-template-columns:1fr}
   .cal-months{grid-template-columns:1fr}
-  .ecard{grid-template-columns:1fr}
-  .emeta{text-align:left}
+  /* Results mobile */
+  .res-hdr{flex-direction:column;align-items:flex-start;gap:6px}
+  .res-title{font-size:32px}
+  .res-hdr > div:last-child{margin-left:0 !important;width:100%}
+  .res-hdr > div:last-child button{width:100%}
+  #range-btn{width:100%;text-align:center}
+  .filter-row{gap:6px;row-gap:8px}
+  .tog{font-size:10px;padding:6px 10px}
+  /* Event cards mobile */
+  .ecard{grid-template-columns:1fr;gap:10px;padding:18px 0}
+  .emeta{text-align:left;display:flex;align-items:center;gap:12px}
+  .mbadge{margin-top:0}
+  .etitle{font-size:17px;margin-bottom:6px}
+  .evenue{font-size:12px;margin-bottom:10px}
+  .tag{font-size:11px;padding:3px 9px}
+  .date-lbl{font-size:12px;letter-spacing:.1em;padding:10px 0}
+  /* Calendar mobile */
+  .cal-day{font-size:12px;padding:8px 2px}
+  .cal-dow{font-size:10px}
+  .timeframe-panel{padding:16px}
 }
 </style>
 </head>
@@ -299,10 +322,10 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
     <!-- Inline timeframe panel -->
     <div class="timeframe-panel" id="timeframe-panel">
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">
-      <button class="qbtn on" id="qbtn-1m" onclick="calQuick(1,'month',this)">1 month</button>
-      <button class="qbtn" id="qbtn-3m" onclick="calQuick(3,'month',this)">3 months</button>
-      <button class="qbtn" id="qbtn-6m" onclick="calQuick(6,'month',this)">6 months</button>
-      <button class="qbtn" id="qbtn-2w" onclick="calQuick(2,'week',this)">2 weeks</button>
+      <button class="tog" id="qbtn-1m" onclick="calQuick(1,'month',this)">1 month</button>
+      <button class="tog" id="qbtn-3m" onclick="calQuick(3,'month',this)">3 months</button>
+      <button class="tog" id="qbtn-6m" onclick="calQuick(6,'month',this)">6 months</button>
+      <button class="tog" id="qbtn-2w" onclick="calQuick(2,'week',this)">2 weeks</button>
     </div>
     <div class="cal-header">
         <button class="cal-nav" onclick="calNav(-1)">←</button>
@@ -853,7 +876,7 @@ function calDayClick(dateStr){
 }
 
 function calQuick(n, unit, btn){
-  document.querySelectorAll('.qbtn').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('#timeframe-panel .tog').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
   const today=new Date(); today.setHours(0,0,0,0);
   calStart=new Date(today);
