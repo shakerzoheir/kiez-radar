@@ -475,6 +475,11 @@ async function onSignedIn(user){
         sessionStorage.removeItem('spotify_returning');
         document.getElementById('loading-screen').classList.remove('active');
         goStep('s1');
+        if(sessionStorage.getItem('spotify_load_playlists')){
+          sessionStorage.removeItem('spotify_load_playlists');
+          const t=sessionStorage.getItem('spotify_token');
+          if(t) await loadSpotifyPlaylists(t);
+        }
       } else {
         // Auto-run with 3 month default
         const dates=defaultDates();
@@ -631,11 +636,10 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(inp)inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addManualArtist();}});
   // Handle Spotify OAuth callback
   if(window.location.search.includes('code=')) handleSpotifyCallback();
-  // Restore Spotify session if token exists
+  // Restore Spotify session if token exists — just update button label, don't auto-load
   const tok=sessionStorage.getItem('spotify_token');
   if(tok){
     document.getElementById('spotify-connect-btn').textContent='Reconnect Spotify';
-    loadSpotifyPlaylists(tok);
   }
 });
 
@@ -1173,6 +1177,12 @@ async function generateCodeChallenge(verifier){
 }
 
 async function connectSpotify(){
+  // If we already have a valid token, just load playlists
+  const existing=sessionStorage.getItem('spotify_token');
+  if(existing){
+    await loadSpotifyPlaylists(existing);
+    return;
+  }
   const verifier=generateCodeVerifier();
   sessionStorage.setItem('spotify_verifier',verifier);
   const challenge=await generateCodeChallenge(verifier);
@@ -1214,8 +1224,9 @@ async function handleSpotifyCallback(){
     sessionStorage.setItem('spotify_token',tok.access_token);
     sessionStorage.removeItem('spotify_verifier');
     // Don't remove spotify_returning here — onSignedIn needs it
-    goStep('s1');
-    await loadSpotifyPlaylists(tok.access_token);
+    // Don't call goStep here — onSignedIn will navigate to s1
+    // Store token and wait for onSignedIn to finish, then load playlists
+    sessionStorage.setItem('spotify_load_playlists','1');
   }catch(e){
     showSpotifyStatus('Failed: '+e.message);
   }
