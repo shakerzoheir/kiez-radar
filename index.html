@@ -1313,8 +1313,8 @@ async function importSpotify(){
       }
     }
     // Filter out ones already in list
-    const existing=new Set(selected.map(s=>s.toLowerCase()));
-    spotifyImportedArtists=[...newArtists].filter(n=>!existing.has(n.toLowerCase())).sort((a,b)=>a.localeCompare(b));
+    const existing=selected; // selected is already a Set of lowercased names
+    spotifyImportedArtists=[...newArtists].filter(n=>!selected.has(n.toLowerCase())).sort((a,b)=>a.localeCompare(b));
     showSpotifyStatus('');
     btn.textContent='Import selected playlists →';
     btn.disabled=false;
@@ -1357,7 +1357,10 @@ function showSpotifyPreview(){
 function confirmSpotifyImport(){
   const pills=[...document.querySelectorAll('#spotify-preview-pills .pill')];
   const toAdd=pills.filter(p=>p.dataset.active==='1').map(p=>spotifyImportedArtists[+p.dataset.index]);
-  toAdd.forEach(name=>selected.push(name));
+  toAdd.forEach(name=>{
+    selected.add(name.toLowerCase());
+    artists.push({name, pls:['Spotify'], count:1});
+  });
   autoSave();
   renderPills(); updateMeta(); goStep('s2');
   showSpotifyStatus(`${toAdd.length} artists added.`);
