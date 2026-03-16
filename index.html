@@ -163,6 +163,13 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
 .elink{display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);text-decoration:none;border:1px solid rgba(232,255,0,.3);padding:5px 11px;transition:all .15s;white-space:nowrap}
 .elink:hover{background:var(--accent);color:#000}
 .mbadge{font-family:var(--mono);font-size:10px;color:var(--accent);display:block;margin-top:5px;text-align:right}
+.share-btn{background:none;border:none;cursor:pointer;padding:5px 7px;color:var(--muted);transition:color .15s;display:inline-flex;align-items:center;justify-content:center;margin-top:4px}
+.share-btn:hover{color:var(--text)}
+.share-popup{position:fixed;z-index:200;background:var(--surface);border:1px solid var(--border);padding:14px 16px;display:none;flex-direction:column;gap:8px;min-width:200px;box-shadow:0 4px 24px rgba(0,0,0,.5)}
+.share-popup.open{display:flex}
+.share-popup a,.share-popup button{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--text);text-decoration:none;background:none;border:none;cursor:pointer;padding:6px 8px;text-align:left;transition:background .12s;white-space:nowrap}
+.share-popup a:hover,.share-popup button:hover{background:var(--surface2)}
+.share-popup .pop-title{font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;padding:0 8px 4px;border-bottom:1px solid var(--border);margin-bottom:2px}
 .no-res{font-family:var(--mono);font-size:13px;color:var(--muted);padding:44px 0;text-align:center;display:none}
 @media(max-width:700px){
   header{padding:20px 16px 16px;gap:10px;align-items:flex-start}
@@ -1039,7 +1046,8 @@ function renderResults(all){
       const mc=arts.filter(a=>isHit(a.name)).length;
       const tags=arts.map(a=>`<span class="tag${isHit(a.name)?' hit':''}">${esc(a.name)}</span>`).join('');
       const badge=mc>0?`<span class="mbadge">↑ ${mc} match${mc>1?'es':''}</span>`:'';
-      html+=`<div class="ecard"><div><div class="etitle">${esc(e.title)}</div><div class="evenue">⌖ ${esc(e.venue?.name||'TBA')}</div><div class="etags">${tags}</div></div><div class="emeta"><a class="elink" href="${url}" target="_blank">RA →</a>${badge}</div></div>`;
+      const shareIcon=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`;
+      html+=`<div class="ecard"><div><div class="etitle">${esc(e.title)}</div><div class="evenue">⌖ ${esc(e.venue?.name||'TBA')}</div><div class="etags">${tags}</div></div><div class="emeta"><a class="elink" href="${url}" target="_blank">RA →</a>${badge}<button class="share-btn" onclick="openShare(event,'${url.replace(/'/g,"\'")}','${esc(e.title).replace(/'/g,"\'")}')" title="Share">${shareIcon}</button></div></div>`;
     });
     html+='</div>';
   });
@@ -1065,6 +1073,45 @@ function setFilter(m){
   document.getElementById('fall').classList.toggle('on',showAll);
   renderResults(showAll);
 }
+let _shareUrl='', _shareTitle='';
+function openShare(e, url, title){
+  e.stopPropagation();
+  const popup=document.getElementById('share-popup');
+  const btn=e.currentTarget;
+  const rect=btn.getBoundingClientRect();
+  // Position popup near button
+  let top=rect.bottom+6, left=rect.left;
+  // Flip if too close to bottom
+  if(top+140>window.innerHeight) top=rect.top-140;
+  // Keep within right edge
+  if(left+210>window.innerWidth) left=window.innerWidth-220;
+  popup.style.top=top+'px';
+  popup.style.left=left+'px';
+  _shareUrl=url;
+  _shareTitle=title;
+  const waText=encodeURIComponent(`${title}\n${url}`);
+  document.getElementById('share-wa').href=`https://wa.me/?text=${waText}`;
+  document.getElementById('share-ra').href=url;
+  popup.classList.add('open');
+  setTimeout(()=>document.addEventListener('mousedown', closeShareOutside), 10);
+}
+function closeShareOutside(e){
+  const popup=document.getElementById('share-popup');
+  if(!popup.contains(e.target)){
+    popup.classList.remove('open');
+    document.removeEventListener('mousedown', closeShareOutside);
+  }
+}
+function copyShareLink(e){
+  e.preventDefault();
+  navigator.clipboard.writeText(_shareUrl).then(()=>{
+    const btn=document.getElementById('share-copy');
+    const orig=btn.textContent;
+    btn.textContent='Copied!';
+    setTimeout(()=>btn.textContent=orig, 1500);
+  });
+}
+
 function filterByDay(val){
   selectedDay=val;
   document.getElementById('clear-day').style.display=val?'':'none';
@@ -1242,5 +1289,13 @@ function setStatus(msg,show){const b=document.getElementById('statusbar');docume
 function setProg(pct,show){const w=document.getElementById('progwrap'),b=document.getElementById('progbar');if(show!==undefined)w.classList.toggle('on',!!show);b.style.width=pct+'%';}
 function showErr(id,msg){const el=document.getElementById(id);el.textContent=msg;el.classList.toggle('on',!!msg);}
 </script>
+  <!-- Share popup -->
+  <div class="share-popup" id="share-popup">
+    <div class="pop-title">Share event</div>
+    <a id="share-wa" href="#" target="_blank">WhatsApp</a>
+    <a id="share-copy" href="#" onclick="copyShareLink(event)">Copy link</a>
+    <a id="share-ra" href="#" target="_blank">Open on RA</a>
+  </div>
+
 </body>
 </html>
