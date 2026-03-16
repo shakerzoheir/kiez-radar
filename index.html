@@ -1245,6 +1245,8 @@ function renderSpotifyPlaylists(playlists){
   });
 }
 
+let spotifyImportedArtists=[];
+
 async function importSpotify(){
   const token=sessionStorage.getItem('spotify_token');
   if(!token){showSpotifyStatus('Not connected — please reconnect Spotify');return;}
@@ -1256,7 +1258,7 @@ async function importSpotify(){
   try{
     for(const cb of checked){
       const pid=cb.dataset.id;
-      showSpotifyStatus(`Fetching playlist...`);
+      showSpotifyStatus(`Fetching tracks...`);
       let url=`https://api.spotify.com/v1/playlists/${pid}/tracks?limit=100&fields=next,items(track(artists(name)))`;
       while(url){
         const res=await fetch(url,{headers:{Authorization:'Bearer '+token}});
@@ -1267,24 +1269,55 @@ async function importSpotify(){
         url=d.next||null;
       }
     }
-    // Merge into selected, skip dupes
-    let added=0;
-    newArtists.forEach(name=>{
-      if(!selected.some(s=>s.toLowerCase()===name.toLowerCase())){
-        selected.push(name); added++;
-      }
-    });
-    showSpotifyStatus(`Done — ${added} new artists added from ${checked.length} playlist${checked.length>1?'s':''}.`);
+    // Filter out ones already in list
+    const existing=new Set(selected.map(s=>s.toLowerCase()));
+    spotifyImportedArtists=[...newArtists].filter(n=>!existing.has(n.toLowerCase())).sort((a,b)=>a.localeCompare(b));
+    showSpotifyStatus('');
     btn.textContent='Import selected playlists →';
     btn.disabled=false;
-    scheduleSave();
-    // Go to review step
-    renderPills(); updateMeta(); goStep('s2');
+    showSpotifyPreview();
   }catch(e){
     showSpotifyStatus('Import failed: '+e.message);
     btn.textContent='Import selected playlists →';
     btn.disabled=false;
   }
+}
+
+function showSpotifyPreview(){
+  const wrap=document.getElementById('spotify-playlists');
+  const total=spotifyImportedArtists.length;
+  wrap.innerHTML=`
+    <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:10px;letter-spacing:.08em">${total} NEW ARTISTS FOUND — DESELECT ANY YOU DON'T WANT</div>
+    <div id="spotify-preview-pills" style="display:flex;flex-wrap:wrap;gap:6px;max-height:240px;overflow-y:auto;margin-bottom:14px"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-p" onclick="confirmSpotifyImport()">Add to my list →</button>
+      <button class="btn-s" onclick="loadSpotifyPlaylists(sessionStorage.getItem('spotify_token'))">← Back</button>
+    </div>`;
+  const pillWrap=document.getElementById('spotify-preview-pills');
+  spotifyImportedArtists.forEach((name,i)=>{
+    const dot=artistIndex.has(name.toLowerCase())?'<span style="color:var(--accent);margin-right:3px">●</span>':'';
+    const pill=document.createElement('div');
+    pill.className='pill on';
+    pill.style.cssText='font-size:11px;padding:4px 10px;cursor:pointer;user-select:none';
+    pill.dataset.index=i;
+    pill.dataset.active='1';
+    pill.innerHTML=`${dot}${esc(name)} <span class="x" style="opacity:1">×</span>`;
+    pill.addEventListener('click',()=>{
+      if(pill.dataset.active==='1'){pill.dataset.active='0';pill.style.opacity='.35';}
+      else{pill.dataset.active='1';pill.style.opacity='1';}
+    });
+    pillWrap.appendChild(pill);
+  });
+  document.getElementById('spotify-import-btn').style.display='none';
+}
+
+function confirmSpotifyImport(){
+  const pills=[...document.querySelectorAll('#spotify-preview-pills .pill')];
+  const toAdd=pills.filter(p=>p.dataset.active==='1').map(p=>spotifyImportedArtists[+p.dataset.index]);
+  toAdd.forEach(name=>selected.push(name));
+  autoSave();
+  renderPills(); updateMeta(); goStep('s2');
+  showSpotifyStatus(`${toAdd.length} artists added.`);
 }
 
 function showSpotifyStatus(msg){
