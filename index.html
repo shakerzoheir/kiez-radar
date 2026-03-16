@@ -1193,6 +1193,7 @@ async function connectSpotify(){
     scope:SPOTIFY_SCOPES,
     code_challenge_method:'S256',
     code_challenge:challenge,
+    show_dialog:'true',
   });
   window.location.href='https://accounts.spotify.com/authorize?'+params;
 }
@@ -1255,11 +1256,9 @@ async function loadSpotifyPlaylists(token){
       url=d.next||null;
     }
     if(!playlists.length){
-      // Likely expired token returning empty — clear and re-auth
+      showSpotifyStatus('No playlists found. Make sure your Spotify account has playlists and try reconnecting.');
       sessionStorage.removeItem('spotify_token');
       document.getElementById('spotify-connect-btn').textContent='Connect Spotify →';
-      showSpotifyStatus('Could not load playlists — reconnecting...');
-      setTimeout(()=>connectSpotify(), 1200);
       return;
     }
     renderSpotifyPlaylists(playlists);
