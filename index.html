@@ -316,7 +316,7 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
 // ─── State ────────────────────────────────────────────────────────────────────
 let artists=[], selected=new Set(), events=[], showAll=false, selectedDay='';
 let dateFrom='', dateTo='';
-let clerkInstance=null, currentUserId=null;
+let clerkInstance=null, currentUserId=null, appInitialized=false;
 let artistIndex=[], manualArtists=[];
 let calViewDate=new Date(), calStart=null, calEnd=null;
 
@@ -342,9 +342,9 @@ window.addEventListener('load', async () => {
   const user = clerkInstance.user;
   if (user) await onSignedIn(user);
   else showAuth();
+  // Only listen for sign-out, not session refreshes
   clerkInstance.addListener(({user})=>{
-    if(user) onSignedIn(user);
-    else onSignedOut();
+    if(!user && appInitialized) onSignedOut();
   });
 });
 
@@ -355,6 +355,8 @@ function showAuth(){
 }
 
 async function onSignedIn(user){
+  if(appInitialized) return;
+  appInitialized=true;
   currentUserId=user.id;
   document.getElementById('auth-screen').classList.remove('active');
   document.getElementById('header-right').style.display='flex';
@@ -386,6 +388,7 @@ async function onSignedIn(user){
 
 function onSignedOut(){
   currentUserId=null;
+  appInitialized=false;
   showAuth();
 }
 
