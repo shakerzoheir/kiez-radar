@@ -177,14 +177,15 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
 <body>
 
 <header>
-  <div class="logo">KIEZ<br>RADAR</div>
+  <div class="logo" onclick="goMyGigs()" style="cursor:pointer">KIEZ<br>RADAR</div>
   <div class="logo-sub">Berlin gig finder<br>SoundCloud × Resident Advisor</div>
   <div class="header-right" id="header-right" style="display:none">
     <span class="user-info" id="user-email"></span>
     <div class="dropdown-wrap" id="artists-dropdown-wrap">
       <button class="btn-s dropdown-trigger" onclick="toggleDropdown()">My Artists ▾</button>
       <div class="dropdown-menu" id="artists-dropdown">
-        <div class="dropdown-item" onclick="viewArtists()">View my artists</div>
+        <div class="dropdown-item" onclick="goMyGigs()">My Gigs</div>
+        <div class="dropdown-item" style="border-top:1px solid var(--border);margin-top:4px;padding-top:12px" onclick="viewArtists()">View my artists</div>
         <div class="dropdown-item" onclick="editArtists()">Edit my artists</div>
       </div>
     </div>
@@ -987,6 +988,16 @@ function goStep(id){
   window.scrollTo(0,0);
 }
 // ─── Dropdown ─────────────────────────────────────────────────────────────────
+function goMyGigs(){
+  document.getElementById('artists-dropdown').classList.remove('open');
+  if(events.length) {
+    goStep('s3');
+  } else {
+    // No results yet — fetch first
+    run();
+  }
+}
+
 function toggleDropdown(){
   document.getElementById('artists-dropdown').classList.toggle('open');
 }
@@ -1018,9 +1029,25 @@ function showExistingArtists(){
   if(!artists.length){ section.style.display='none'; return; }
   section.style.display='block';
   countEl.textContent = artists.length;
-  pillsEl.innerHTML = artists.map(a =>
-    `<div class="pill on" style="cursor:default;pointer-events:none;font-size:12px;padding:4px 10px">${esc(a.name)}</div>`
-  ).join('');
+  pillsEl.innerHTML = '';
+  artists.forEach((a, i) => {
+    const pill = document.createElement('div');
+    pill.className = 'pill on';
+    pill.style.cssText = 'font-size:12px;padding:4px 10px';
+    const ns = document.createElement('span'); ns.textContent = a.name;
+    const xb = document.createElement('span');
+    xb.className = 'x'; xb.textContent = '×';
+    xb.style.opacity = '1'; xb.style.cursor = 'pointer';
+    xb.onclick = () => {
+      artists = artists.filter(b => b.name !== a.name);
+      selected.delete(a.name.toLowerCase());
+      autoSave();
+      showExistingArtists();
+      renderReview();
+    };
+    pill.appendChild(ns); pill.appendChild(xb);
+    pillsEl.appendChild(pill);
+  });
 }
 
 function closeView(){
