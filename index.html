@@ -1309,9 +1309,12 @@ async function importSpotify(){
         const d=await res.json();
         if(d.error){
           console.log('Spotify tracks error:', JSON.stringify(d));
-          if(d.error.status===403||d.error.status===401){
+          if(d.error.status===401){
             sessionStorage.removeItem('spotify_token');
-            throw new Error(`${d.error.status}: ${d.error.message} — please reconnect Spotify`);
+            throw new Error('Session expired — please reconnect Spotify');
+          }
+          if(d.error.status===403){
+            break; // Skip this playlist, continue with others
           }
           throw new Error(d.error.message);
         }
