@@ -1302,20 +1302,25 @@ async function importSpotify(){
     for(const cb of checked){
       const pid=cb.dataset.id;
       showSpotifyStatus(`Fetching tracks...`);
-      let url=`https://api.spotify.com/v1/playlists/${pid}/tracks?limit=100&fields=next,items(track(artists(name)))`;
+      let url=`https://api.spotify.com/v1/playlists/${pid}/tracks?limit=100`;
       while(url){
         const res=await fetch(url,{headers:{Authorization:'Bearer '+token}});
         const d=await res.json();
+        if(d.error) throw new Error(d.error.message);
         (d.items||[]).forEach(item=>{
-          (item?.track?.artists||[]).forEach(a=>{if(a.name)newArtists.add(a.name.trim());});
+          const track=item?.track;
+          if(!track) return;
+          (track.artists||[]).forEach(a=>{if(a?.name)newArtists.add(a.name.trim());});
         });
         url=d.next||null;
       }
     }
     // Filter out ones already in list
     const existing=selected; // selected is already a Set of lowercased names
+    const totalFound=newArtists.size;
     spotifyImportedArtists=[...newArtists].filter(n=>!selected.has(n.toLowerCase())).sort((a,b)=>a.localeCompare(b));
-    showSpotifyStatus('');
+    const alreadyHave=totalFound-spotifyImportedArtists.length;
+    showSpotifyStatus(totalFound===0?'No artists found in these playlists.':`Found ${totalFound} artists total${alreadyHave>0?`, ${alreadyHave} already in your list`:''}.`);
     btn.textContent='Import selected playlists →';
     btn.disabled=false;
     showSpotifyPreview();
