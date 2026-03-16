@@ -1252,7 +1252,7 @@ async function loadSpotifyPlaylists(token){
         }
         throw new Error(d.error.message||'Spotify API error');
       }
-      playlists=playlists.concat((d.items||[]).filter(p=>p&&p.tracks));
+      playlists=playlists.concat((d.items||[]).filter(p=>p&&p.id));
       url=d.next||null;
     }
     if(!playlists.length){
@@ -1274,7 +1274,7 @@ function renderSpotifyPlaylists(playlists){
   playlists.forEach(p=>{
     const row=document.createElement('label');
     row.style.cssText='display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;font-family:var(--mono);font-size:11px;color:var(--text);border-bottom:1px solid var(--border)';
-    const trackCount=p.tracks?.total??'?';
+    const trackCount=p.items?.total??p.tracks?.total??'?';
     row.innerHTML=`<input type="checkbox" data-id="${p.id}" data-total="${trackCount}" style="accent-color:var(--accent)"><span>${esc(p.name)}</span><span style="color:var(--muted);margin-left:auto">${trackCount} tracks</span>`;
     wrap.appendChild(row);
   });
