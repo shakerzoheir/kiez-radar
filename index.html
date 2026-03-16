@@ -788,23 +788,25 @@ function toggleTimeframe(e){
     renderCalendar();
     updateCalRangeInfo();
     panel.classList.add('open');
-    // Close on outside click
+    // Close on outside mousedown
     setTimeout(()=>{
-      document.addEventListener('click', closeTimeframeOutside);
+      document.addEventListener('mousedown', closeTimeframeOutside);
     }, 50);
   } else {
     panel.classList.remove('open');
-    document.removeEventListener('click', closeTimeframeOutside);
+    document.removeEventListener('mousedown', closeTimeframeOutside);
   }
 }
 
 function closeTimeframeOutside(e){
   const panel=document.getElementById('timeframe-panel');
   const btn=document.getElementById('range-btn');
+  // Only close if click is outside both the panel and the trigger button
   if(!panel.contains(e.target) && !btn.contains(e.target)){
     panel.classList.remove('open');
-    document.removeEventListener('click', closeTimeframeOutside);
+    document.removeEventListener('mousedown', closeTimeframeOutside);
   }
+  // If click is inside panel, do nothing — let it bubble naturally
 }
 
 function calNav(dir){
@@ -914,7 +916,7 @@ async function applyTimeframe(){
   dateFrom=fmt(calStart);
   dateTo=calEnd?fmt(calEnd):fmt(calStart);
   document.getElementById('timeframe-panel').classList.remove('open');
-  document.removeEventListener('click', closeTimeframeOutside);
+  document.removeEventListener('mousedown', closeTimeframeOutside);
   updateRangeBtn();
   clearDay();
   await runFetch();
