@@ -630,10 +630,13 @@ function processFile(f){
       const ext=extractArtists(rows);
       if(!ext.length){showErr('uerr','No artists found. Check the file format.');return;}
       showErr('uerr','');
+      // Filter to only artists in RA index
+      const inIndex=ext.filter(a=>isVerified(a.name));
+      const filteredOut=ext.length-inIndex.length;
       // Merge with existing, track dupes
       const existingNames=new Set(artists.map(a=>a.name.toLowerCase()));
-      const newArtists=ext.filter(a=>!existingNames.has(a.name.toLowerCase()));
-      const dupeCount=ext.length-newArtists.length;
+      const newArtists=inIndex.filter(a=>!existingNames.has(a.name.toLowerCase()));
+      const dupeCount=inIndex.length-newArtists.length;
       // Merge
       const merged=[...artists];
       newArtists.forEach(a=>{if(!merged.find(b=>b.name.toLowerCase()===a.name.toLowerCase()))merged.push(a);});
@@ -641,8 +644,10 @@ function processFile(f){
       artists=merged;
       selected=new Set(artists.map(a=>a.name.toLowerCase()));
       setSaveStatus('','Not saved');
-      if(dupeCount>0) showErr('uerr',`${newArtists.length} new artists added · ${dupeCount} already in your list (skipped)`);
-      else showErr('uerr','');
+      const filterMsg=filteredOut>0?` · ${filteredOut} not in RA database (skipped)`:'';
+      if(newArtists.length===0) showErr('uerr',`No new artists found in RA database.${filterMsg}`);
+      else if(dupeCount>0) showErr('uerr',`${newArtists.length} new artists added · ${dupeCount} already in your list (skipped)${filterMsg}`);
+      else showErr('uerr', filteredOut>0?`${newArtists.length} artists added${filterMsg}`:'');
       renderReview(); goStep('s2');
     }catch(err){showErr('uerr','Could not parse: '+err.message);}
   };
@@ -816,6 +821,11 @@ function selectNone(){selected.clear();renderReview();}
 function addArtist(){
   const inp=document.getElementById('addinput');
   const name=inp.value.trim(); if(!name)return;
+  if(!isVerified(name)){
+    showErr('serr',`"${name}" not found in RA database`);
+    setTimeout(()=>showErr('serr',''),3000);
+    return;
+  }
   if(!artists.find(a=>a.name.toLowerCase()===name.toLowerCase())){
     artists.push({name,pls:['Manual'],count:1});
     artists.sort((a,b)=>a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
@@ -1458,10 +1468,13 @@ async function importSpotify(){
     // Filter out ones already in list
     const existing=selected; // selected is already a Set of lowercased names
     const totalFound=newArtists.size;
-    spotifyImportedArtists=[...newArtists].filter(n=>!selected.has(n.toLowerCase())).sort((a,b)=>a.localeCompare(b));
-    const alreadyHave=totalFound-spotifyImportedArtists.length;
-    const skipMsg=skipped>0?` (${skipped} playlist${skipped>1?'s':''} blocked by Spotify — request Extended Quota to fix)`:'';
-    showSpotifyStatus(totalFound===0?`No artists found.${skipMsg}`:`Found ${totalFound} artists total${alreadyHave>0?`, ${alreadyHave} already in your list`:''}${skipMsg}.`);
+    const inRAIndex=[...newArtists].filter(n=>isVerified(n));
+    const notInIndex=totalFound-inRAIndex.length;
+    spotifyImportedArtists=inRAIndex.filter(n=>!selected.has(n.toLowerCase())).sort((a,b)=>a.localeCompare(b));
+    const alreadyHave=inRAIndex.length-spotifyImportedArtists.length;
+    const skipMsg=skipped>0?` (${skipped} playlist${skipped>1?'s':''} blocked by Spotify)`:'';
+    const indexMsg=notInIndex>0?` · ${notInIndex} not in RA database`:'';
+    showSpotifyStatus(spotifyImportedArtists.length===0?`No artists found in RA database.${skipMsg}`:`Found ${spotifyImportedArtists.length} new artists${alreadyHave>0?` · ${alreadyHave} already in your list`:''}${indexMsg}${skipMsg}.`);
     btn.textContent='Extract artists →';
     btn.disabled=false;
     document.getElementById('spotify-import-btn').style.display='none';
@@ -1726,6 +1739,15 @@ function viewAddArtist(){
   const inp = document.getElementById('view-addinput');
   const name = inp.value.trim(); if(!name) return;
   const dupeMsg = document.getElementById('view-dupe-msg');
+
+  // Check if in RA index
+  if(!isVerified(name)){
+    dupeMsg.textContent = `"${name}" not found in RA database`;
+    dupeMsg.style.display = 'block';
+    clearTimeout(window._dupeTimer);
+    window._dupeTimer = setTimeout(() => { dupeMsg.style.display = 'none'; }, 3000);
+    return;
+  }
 
   // Check for duplicate
   if(artists.find(a => a.name.toLowerCase() === name.toLowerCase())){
