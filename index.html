@@ -208,7 +208,7 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
 
 <header>
   <div class="logo" onclick="goMyGigs()" style="cursor:pointer">KIEZ<br>RADAR</div>
-  <div class="logo-sub">From your ears to the dancefloor<br>SoundCloud · Spotify · Resident Advisor</div>
+  <div class="logo-sub">From your ears to the dancefloor<br>SoundCloud meets Spotify meets Resident Advisor</div>
   <div class="header-right" id="header-right" style="display:none">
     <span class="user-info" id="user-email"></span>
     <button class="btn-s" onclick="goMyGigs()">My Events</button>
@@ -246,7 +246,7 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
     <div class="upload-heading">Add your artists</div>
     <div class="upload-options">
 
-      <!-- Option 1: CSV -->
+      <!-- Option 1: SoundCloud -->
       <div class="upload-card">
         <div class="upload-card-title">// Option 1 — Import from SoundCloud</div>
         <ol class="upload-steps">
@@ -262,29 +262,24 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
         </div>
       </div>
 
-      <!-- Option 2: Manual -->
+      <!-- Option 2: Spotify -->
       <div class="upload-card">
-        <div class="upload-card-title">// Option 2 — Add artists manually</div>
-        <div class="manual-input-wrap">
-          <div class="manual-hint">Type an artist name and press Enter or click Add. Suggestions come from artists who have played Berlin in the last 2 years.</div>
-          <div class="autocomplete-wrap">
-            <input type="text" class="autocomplete-input" id="manual-input" placeholder="e.g. Narciss, HiTMiLØW..." autocomplete="off" spellcheck="false">
-            <div class="autocomplete-dropdown" id="autocomplete-dropdown"></div>
-          </div>
-          <button class="btn-s" onclick="addManualArtist()">+ Add artist</button>
-          <div id="manual-pills" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
-        </div>
-        <button class="btn btn-p" id="manual-go-btn" onclick="useManualArtists()" disabled style="margin-top:auto">USE THIS LIST →</button>
-      </div>
-
-      <!-- Option 3: Spotify -->
-      <div class="upload-card">
-        <div class="upload-card-title">// Option 3 — Import from Spotify</div>
+        <div class="upload-card-title">// Option 2 — Import from Spotify</div>
         <div class="manual-hint" style="margin-bottom:16px">Connect your Spotify account, pick playlists, and we'll extract all the artists automatically.</div>
         <button class="btn btn-p" id="spotify-connect-btn" onclick="connectSpotify()" style="margin-bottom:12px">Connect Spotify →</button>
         <div id="spotify-status" style="font-family:var(--mono);font-size:11px;color:var(--muted);display:none"></div>
         <div id="spotify-playlists" style="display:none;margin-top:12px"></div>
         <button class="btn btn-p" id="spotify-import-btn" onclick="importSpotify()" disabled style="display:none;margin-top:12px">Extract artists →</button>
+      </div>
+
+      <!-- Option 3: Manual -->
+      <div class="upload-card">
+        <div class="upload-card-title">// Option 3 — Add artists manually</div>
+        <div class="manual-hint" style="margin-bottom:16px">Type an artist name and press Enter or click Add. Suggestions come from artists who have played Berlin, London or Amsterdam in the last 2 years.</div>
+        <button class="btn btn-p" onclick="goEditArtists()">Edit my artist list →</button>
+        <input type="text" id="manual-input" style="display:none" autocomplete="off" spellcheck="false">
+        <div id="autocomplete-dropdown" style="display:none"></div>
+        <div id="manual-pills" style="display:none"></div>
       </div>
 
     </div>
@@ -414,7 +409,8 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
           <button class="btn-s" onclick="viewAddArtist()">+ ADD</button>
         </div>
         <div id="view-dupe-msg" style="font-family:var(--mono);font-size:11px;color:var(--accent2);margin-bottom:10px;display:none"></div>
-        <div class="sec-label" style="margin-top:12px">Artists (<span id="view-count"></span>) — click × to remove</div>
+        <div class="manual-hint" style="margin-bottom:8px">Type an artist name and press Enter or click Add. Suggestions come from artists who have played Berlin, London or Amsterdam in the last 2 years.</div>
+        <div class="sec-label" style="margin-top:12px">My artists (<span id="view-count"></span>) — click × to remove</div>
         <div class="pills" id="view-pills" style="margin-top:10px"></div>
       </div>
     </div>
@@ -1554,6 +1550,14 @@ function toggleSortDir(){
   document.getElementById('sort-dir').textContent=viewSortDir===1?'↑':'↓';
   renderViewReadonly();
 }
+function goEditArtists(){
+  renderViewPanel();
+  window._prevStep=document.querySelector('.step.active')?.id||'s1';
+  goStep('s-view');
+  // Auto-enter edit mode
+  setTimeout(()=>toggleViewEdit(), 50);
+}
+
 function toggleViewEdit(){
   viewEditMode=!viewEditMode;
   document.getElementById('view-edit-btn').textContent=viewEditMode?'Done editing':'Edit list';
