@@ -284,7 +284,7 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
         <button class="btn btn-p" id="spotify-connect-btn" onclick="connectSpotify()" style="margin-bottom:12px">Connect Spotify →</button>
         <div id="spotify-status" style="font-family:var(--mono);font-size:11px;color:var(--muted);display:none"></div>
         <div id="spotify-playlists" style="display:none;margin-top:12px"></div>
-        <button class="btn btn-p" id="spotify-import-btn" onclick="importSpotify()" disabled style="display:none;margin-top:12px">Import selected playlists →</button>
+        <button class="btn btn-p" id="spotify-import-btn" onclick="importSpotify()" disabled style="display:none;margin-top:12px">Extract artists →</button>
       </div>
 
     </div>
@@ -1358,8 +1358,9 @@ async function importSpotify(){
     const alreadyHave=totalFound-spotifyImportedArtists.length;
     const skipMsg=skipped>0?` (${skipped} playlist${skipped>1?'s':''} blocked by Spotify — request Extended Quota to fix)`:'';
     showSpotifyStatus(totalFound===0?`No artists found.${skipMsg}`:`Found ${totalFound} artists total${alreadyHave>0?`, ${alreadyHave} already in your list`:''}${skipMsg}.`);
-    btn.textContent='Import selected playlists →';
+    btn.textContent='Extract artists →';
     btn.disabled=false;
+    document.getElementById('spotify-import-btn').style.display='none';
     showSpotifyPreview();
   }catch(e){
     showSpotifyStatus('Import failed: '+e.message);
@@ -1375,12 +1376,12 @@ function showSpotifyPreview(){
     <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:10px;letter-spacing:.08em">${total} NEW ARTISTS FOUND — DESELECT ANY YOU DON'T WANT</div>
     <div id="spotify-preview-pills" style="display:flex;flex-wrap:wrap;gap:6px;max-height:240px;overflow-y:auto;margin-bottom:14px"></div>
     <div style="display:flex;gap:8px">
-      <button class="btn btn-p" onclick="confirmSpotifyImport()">Add to my list →</button>
-      <button class="btn-s" onclick="loadSpotifyPlaylists(sessionStorage.getItem('spotify_token'))">← Back</button>
+      <button class="btn btn-p" id="spotify-confirm-btn" onclick="confirmSpotifyImport()">Add ${spotifyImportedArtists.length} artists to my list →</button>
+      <button class="btn-s" onclick="loadSpotifyPlaylists(sessionStorage.getItem('spotify_token'))">← Back to playlists</button>
     </div>`;
   const pillWrap=document.getElementById('spotify-preview-pills');
   spotifyImportedArtists.forEach((name,i)=>{
-    const dot=artistIndex.has(name.toLowerCase())?'<span style="color:var(--accent);margin-right:3px">●</span>':'';
+    const dot=artistIndex.some(a=>a.toLowerCase()===name.toLowerCase())?'<span style="color:var(--accent);margin-right:3px">●</span>':'';
     const pill=document.createElement('div');
     pill.className='pill on';
     pill.style.cssText='font-size:11px;padding:4px 10px;cursor:pointer;user-select:none';
@@ -1390,6 +1391,9 @@ function showSpotifyPreview(){
     pill.addEventListener('click',()=>{
       if(pill.dataset.active==='1'){pill.dataset.active='0';pill.style.opacity='.35';}
       else{pill.dataset.active='1';pill.style.opacity='1';}
+      const activeCount=[...document.querySelectorAll('#spotify-preview-pills .pill')].filter(p=>p.dataset.active==='1').length;
+      const btn=document.getElementById('spotify-confirm-btn');
+      if(btn) btn.textContent=`Add ${activeCount} artists to my list →`;
     });
     pillWrap.appendChild(pill);
   });
