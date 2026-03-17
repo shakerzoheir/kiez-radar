@@ -873,6 +873,7 @@ function calNav(dir){
 function renderCalendar(){
   const container=document.getElementById('cal-months');
   const today=new Date(); today.setHours(0,0,0,0);
+  window._shareData=[];
   let html='';
   for(let m=0;m<2;m++){
     const d=new Date(calViewDate.getFullYear(), calViewDate.getMonth()+m, 1);
@@ -1092,6 +1093,7 @@ function renderResults(all){
   nores.style.display='none';
   const byDate={};
   filtered.forEach(i=>{const d=i.event.date?.split('T')[0]||'TBA';if(!byDate[d])byDate[d]=[];byDate[d].push(i);});
+  window._shareData=[];
   let html='';
   Object.keys(byDate).sort().forEach(d=>{
     const count=byDate[d].length;
@@ -1104,9 +1106,9 @@ function renderResults(all){
       const tags=arts.map(a=>`<span class="tag${isHit(a.name)?' hit':''}">${esc(a.name)}</span>`).join('');
       const badge=mc>0?`<span class="mbadge">↑ ${mc} match${mc>1?'es':''}</span>`:'';
       const shareIcon=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`;
-      const vname=esc(e.venue?.name||'TBA').replace(/'/g,"\'");
-      const edate=e.date?e.date.split('T')[0]:'';
-      html+=`<div class="ecard"><div><div class="etitle">${esc(e.title)}</div><div class="evenue">⌖ ${esc(e.venue?.name||'TBA')}</div><div class="etags">${tags}</div></div><div class="emeta"><a class="elink" href="${url}" target="_blank">RA →</a>${badge}<button class="share-btn" onclick="openShare(event,'${url.replace(/'/g,"\'")}','${esc(e.title).replace(/'/g,"\'")}','${edate}','${vname}')" title="Share">${shareIcon}</button></div></div>`;
+      const shareIdx=window._shareData.length;
+      window._shareData.push({url, title:e.title, date:e.date?e.date.split('T')[0]:'', venue:e.venue?.name||''});
+      html+=`<div class="ecard"><div><div class="etitle">${esc(e.title)}</div><div class="evenue">⌖ ${esc(e.venue?.name||'TBA')}</div><div class="etags">${tags}</div></div><div class="emeta"><a class="elink" href="${url}" target="_blank">RA →</a>${badge}<button class="share-btn" onclick="openShare(event,${shareIdx})" title="Share">${shareIcon}</button></div></div>`;
     });
     html+='</div>';
   });
@@ -1133,7 +1135,9 @@ function setFilter(m){
   renderResults(showAll);
 }
 let _shareUrl='', _shareTitle='', _shareDate='', _shareVenue='';
-function openShare(e, url, title, date='', venue=''){
+function openShare(e, idx){
+  const d=window._shareData?.[idx]||{};
+  const url=d.url||'', title=d.title||'', date=d.date||'', venue=d.venue||'';
   e.stopPropagation();
   const popup=document.getElementById('share-popup');
   const btn=e.currentTarget;
@@ -1146,10 +1150,7 @@ function openShare(e, url, title, date='', venue=''){
   if(left+210>window.innerWidth) left=window.innerWidth-220;
   popup.style.top=top+'px';
   popup.style.left=left+'px';
-  _shareUrl=url;
-  _shareTitle=title;
-  _shareDate=date;
-  _shareVenue=venue;
+  _shareUrl=url; _shareTitle=title; _shareDate=date; _shareVenue=venue;
   const waText=encodeURIComponent(`${title}\n${url}`);
   document.getElementById('share-wa').href=`https://wa.me/?text=${waText}`;
   document.getElementById('share-ra').href=url;
