@@ -398,7 +398,7 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
           <span id="view-save-status">Saved</span>
         </div>
         <!-- Pills first — filtered live as you type -->
-        <div class="sec-label">My artists (<span id="view-count"></span>) — click × to remove</div>
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px"><span id="view-count"></span> artists — tap × to remove</div>
         <div class="pills" id="view-pills" style="margin-top:10px;margin-bottom:20px"></div>
         <!-- Add input below pills -->
         <div class="manual-hint" style="margin-bottom:8px">Type an artist name and press Enter or click Add. Suggestions come from artists who have played Berlin, London or Amsterdam in the last 2 years.</div>
@@ -479,6 +479,7 @@ async function onSignedIn(user){
     const data=await res.json();
     if(data.artists && data.artists.length>0){
       artists=data.artists.map(name=>({name,pls:['Saved'],count:1}));
+      dedupArtists();
       selected=new Set(artists.map(a=>a.name.toLowerCase()));
       // If returning from Spotify OAuth, go to upload screen instead of auto-running
       if(sessionStorage.getItem('spotify_returning')||window.location.search.includes('code=')){
@@ -806,6 +807,17 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 
 // ─── Save ─────────────────────────────────────────────────────────────────────
+function dedupArtists(){
+  const seen=new Set();
+  artists=artists.filter(a=>{
+    const k=a.name.toLowerCase().trim();
+    if(seen.has(k)) return false;
+    seen.add(k); return true;
+  });
+  // Rebuild selected from deduped artists
+  selected=new Set(artists.map(a=>a.name.toLowerCase()));
+}
+
 function autoSave(){
   clearTimeout(window._saveTimer);
   setViewSaveStatus('saving','Saving...');
@@ -1461,6 +1473,7 @@ function confirmSpotifyImport(){
     selected.add(name.toLowerCase());
     artists.push({name, pls:['Spotify'], count:1});
   });
+  dedupArtists();
   autoSave();
   renderReview();
   goStep('s2');
@@ -1602,9 +1615,11 @@ function renderViewReadonly(){
 }
 function renderViewPills(){
   const c=document.getElementById('view-pills');
+  dedupArtists();
   document.getElementById('view-count').textContent=artists.length;
   c.innerHTML='';
-  artists.forEach(a=>{
+  const sorted=[...artists].sort((a,b)=>a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+  sorted.forEach(a=>{
     const verified=isVerified(a.name);
     const pill=document.createElement('div');
     pill.className='pill on'+(verified?' verified':'');
