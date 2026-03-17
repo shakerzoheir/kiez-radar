@@ -1272,13 +1272,27 @@ async function loadSpotifyPlaylists(token){
 function renderSpotifyPlaylists(playlists){
   const wrap=document.getElementById('spotify-playlists');
   wrap.innerHTML='<div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:8px;letter-spacing:.08em">SELECT PLAYLISTS TO IMPORT</div>';
-  playlists.forEach(p=>{
+  // Only show playlists the user owns — Spotify Feb 2026 restricts track access to owned playlists
+  const myId=playlists.find(p=>p.owner)?.owner?.id;
+  const owned=playlists.filter(p=>p.owner?.id===myId);
+  const others=playlists.filter(p=>p.owner?.id!==myId);
+
+  if(owned.length===0){
+    wrap.innerHTML+='<div style="color:var(--muted);font-size:11px;font-family:var(--mono);padding:8px 0">No playlists found that you own.</div>';
+  }
+  owned.forEach(p=>{
     const row=document.createElement('label');
     row.style.cssText='display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;font-family:var(--mono);font-size:11px;color:var(--text);border-bottom:1px solid var(--border)';
-    const trackCount=p.items?.total??p.tracks?.total??'?';
+    const trackCount=p.items?.total??'?';
     row.innerHTML=`<input type="checkbox" data-id="${p.id}" data-total="${trackCount}" style="accent-color:var(--accent)"><span>${esc(p.name)}</span><span style="color:var(--muted);margin-left:auto">${trackCount} tracks</span>`;
     wrap.appendChild(row);
   });
+  if(others.length>0){
+    const note=document.createElement('div');
+    note.style.cssText='font-family:var(--mono);font-size:10px;color:var(--muted);padding:8px 0 4px;margin-top:4px';
+    note.textContent=`${others.length} playlist${others.length>1?'s':''} by others hidden — Spotify only allows reading your own playlists`;
+    wrap.appendChild(note);
+  }
   wrap.style.display='block';
   // Show import button when any checkbox ticked
   wrap.addEventListener('change',()=>{
@@ -1299,25 +1313,31 @@ async function importSpotify(){
   const btn=document.getElementById('spotify-import-btn');
   btn.disabled=true; btn.textContent='Importing...';
   const newArtists=new Set();
+  let skipped=0;
   try{
     for(const cb of checked){
       const pid=cb.dataset.id;
-      showSpotifyStatus(`Fetching tracks...`);
-      let url=`https://api.spotify.com/v1/playlists/${pid}/tracks?limit=100`;
+      const pname=cb.closest('label')?.querySelector('span')?.textContent||pid;
+      showSpotifyStatus(`Fetching: ${pname}...`);
+      // Try items endpoint (works better in dev mode for some playlists)
+      let url=`https://api.spotify.com/v1/playlists/${pid}/tracks?limit=50&market=DE`;
+      let ok=false;
       while(url){
-        const res=await fetch(url,{headers:{Authorization:'Bearer '+token}});
+        const res=await fetch(url,{headers:{Authorization:'Bearer '+token,'Accept':'application/json'}});
         const d=await res.json();
         if(d.error){
-          console.log('Spotify tracks error:', JSON.stringify(d));
+          console.log('Spotify tracks error:', pid, JSON.stringify(d));
           if(d.error.status===401){
             sessionStorage.removeItem('spotify_token');
             throw new Error('Session expired — please reconnect Spotify');
           }
           if(d.error.status===403){
-            break; // Skip this playlist, continue with others
+            skipped++;
+            break;
           }
           throw new Error(d.error.message);
         }
+        ok=true;
         (d.items||[]).forEach(item=>{
           const track=item?.track;
           if(!track) return;
@@ -1331,7 +1351,8 @@ async function importSpotify(){
     const totalFound=newArtists.size;
     spotifyImportedArtists=[...newArtists].filter(n=>!selected.has(n.toLowerCase())).sort((a,b)=>a.localeCompare(b));
     const alreadyHave=totalFound-spotifyImportedArtists.length;
-    showSpotifyStatus(totalFound===0?'No artists found in these playlists.':`Found ${totalFound} artists total${alreadyHave>0?`, ${alreadyHave} already in your list`:''}.`);
+    const skipMsg=skipped>0?` (${skipped} playlist${skipped>1?'s':''} blocked by Spotify — request Extended Quota to fix)`:'';
+    showSpotifyStatus(totalFound===0?`No artists found.${skipMsg}`:`Found ${totalFound} artists total${alreadyHave>0?`, ${alreadyHave} already in your list`:''}${skipMsg}.`);
     btn.textContent='Import selected playlists →';
     btn.disabled=false;
     showSpotifyPreview();
