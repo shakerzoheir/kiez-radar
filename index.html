@@ -1307,7 +1307,8 @@ async function importSCPlaylist(){
   const url=inp.value.trim();
   if(!url){showSCStatus('Please paste a SoundCloud playlist URL');return;}
   if(!url.includes('soundcloud.com')){showSCStatus('Must be a soundcloud.com URL');return;}
-  if(!url.includes('/sets/')){showSCStatus('Must be a playlist URL — should contain /sets/');return;}
+  // Allow short URLs (on.soundcloud.com) — /sets/ check only for full URLs
+  if(!url.includes('on.soundcloud.com') && !url.includes('/sets/')){showSCStatus('Must be a playlist URL — should contain /sets/');return;}
 
   const btn=document.getElementById('sc-playlist-btn');
   btn.disabled=true; btn.textContent='Importing...';
@@ -1340,9 +1341,6 @@ async function importSCPlaylist(){
     spotifyImportedArtists=newArtists.sort((a,b)=>a.localeCompare(b));
     showSCStatus('');
     btn.disabled=false; btn.textContent='Import playlist →';
-    const indexMsg=notInIndex>0?` · ${notInIndex} not in RA database`:'';
-    const dupeMsg=alreadyHave>0?` · ${alreadyHave} already in your list`:'';
-    showSpotifyStatus('Found '+newArtists.length+' new artists from '+d.total+' tracks'+indexMsg+dupeMsg+'.');
     showSpotifyPreview();
   }catch(e){
     showSCStatus('Failed: '+e.message);
