@@ -1539,36 +1539,7 @@ function viewArtists(){
 
 function editArtists(){
   document.getElementById('artists-dropdown').classList.remove('open');
-  showExistingArtists();
   goStep('s1');
-}
-
-function showExistingArtists(){
-  const section = document.getElementById('existing-artists-section');
-  const pillsEl = document.getElementById('existing-pills');
-  const countEl = document.getElementById('existing-count');
-  if(!artists.length){ section.style.display='none'; return; }
-  section.style.display='block';
-  countEl.textContent = artists.length;
-  pillsEl.innerHTML = '';
-  artists.forEach((a, i) => {
-    const pill = document.createElement('div');
-    pill.className = 'pill on';
-    pill.style.cssText = 'font-size:12px;padding:4px 10px';
-    const ns = document.createElement('span'); ns.textContent = a.name;
-    const xb = document.createElement('span');
-    xb.className = 'x'; xb.textContent = '×';
-    xb.style.opacity = '1'; xb.style.cursor = 'pointer';
-    xb.onclick = () => {
-      artists = artists.filter(b => b.name !== a.name);
-      selected.delete(a.name.toLowerCase());
-      autoSave();
-      showExistingArtists();
-      renderReview();
-    };
-    pill.appendChild(ns); pill.appendChild(xb);
-    pillsEl.appendChild(pill);
-  });
 }
 
 function closeView(){
