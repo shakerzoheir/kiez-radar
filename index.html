@@ -44,7 +44,7 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
 .loading-spin{width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
 /* Upload screen */
 .upload-heading{font-family:var(--display);font-size:36px;letter-spacing:.04em;color:var(--text);margin-bottom:32px}
-.upload-options{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;margin-bottom:24px}
+.upload-options{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:24px;margin-bottom:24px}
 .upload-card{background:var(--surface);border:1px solid var(--border);padding:28px;display:flex;flex-direction:column;gap:16px}
 .upload-card-title{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)}
 .upload-steps{list-style:none;display:flex;flex-direction:column;gap:10px}
@@ -272,15 +272,15 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
     <div class="upload-heading">Add artists</div>
     <div class="upload-options">
 
-      <!-- Option 1: SoundCloud -->
+      <!-- Option 1: SoundCloud CSV -->
       <div class="upload-card">
-        <div class="upload-card-title">// Option 1 — Import from SoundCloud</div>
+        <div class="upload-card-title">// Option 1 — Import from SoundCloud via CSV</div>
+        <div class="manual-hint" style="margin-bottom:12px">Export your SoundCloud library as a CSV file using TuneMyMusic, then drop it below. Only artists found in our RA database will be imported.</div>
         <ol class="upload-steps">
           <li>Go to <a href="https://www.tunemymusic.com/transfer/soundcloud-to-file" target="_blank">TuneMyMusic</a></li>
           <li>Connect your SoundCloud account</li>
           <li>Select your library or playlists to export<span class="note">Free plan: up to 500 tracks</span></li>
-          <li>Export as CSV file</li>
-          <li>Drop the file in the box below</li>
+          <li>Export as CSV file and drop it below</li>
         </ol>
         <div class="upload-zone" id="uzone">
           <input type="file" id="finput" accept=".csv">
@@ -288,20 +288,36 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
         </div>
       </div>
 
-      <!-- Option 2: Spotify -->
+      <!-- Option 2: SoundCloud Playlist URL -->
       <div class="upload-card">
-        <div class="upload-card-title">// Option 2 — Import from Spotify</div>
-        <div class="manual-hint" style="margin-bottom:16px">Connect your Spotify account, pick playlists, and we'll extract all the artists automatically.</div>
+        <div class="upload-card-title">// Option 2 — Import from SoundCloud playlist</div>
+        <div class="manual-hint" style="margin-bottom:12px">Paste the URL of any public SoundCloud playlist. We'll extract all artists and cross-check against our RA database automatically.</div>
+        <ol class="upload-steps">
+          <li>Open a public playlist on SoundCloud</li>
+          <li>Copy the URL from your browser<span class="note">e.g. soundcloud.com/you/sets/techno</span></li>
+          <li>Paste it below and press Import</li>
+        </ol>
+        <div style="display:flex;gap:8px;margin-top:auto">
+          <input type="text" class="autocomplete-input" id="sc-playlist-input" placeholder="soundcloud.com/you/sets/..." autocomplete="off" spellcheck="false" style="flex:1;font-size:13px">
+        </div>
+        <button class="btn btn-p" id="sc-playlist-btn" onclick="importSCPlaylist()" style="margin-top:8px">Import playlist →</button>
+        <div id="sc-playlist-status" style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:8px;display:none"></div>
+      </div>
+
+      <!-- Option 3: Spotify -->
+      <div class="upload-card">
+        <div class="upload-card-title">// Option 3 — Import from Spotify</div>
+        <div class="manual-hint" style="margin-bottom:12px">Connect your Spotify account and pick which playlists to import from. Only artists in our RA database will be added.</div>
         <button class="btn btn-p" id="spotify-connect-btn" onclick="connectSpotify()" style="margin-bottom:12px">Connect Spotify →</button>
         <div id="spotify-status" style="font-family:var(--mono);font-size:11px;color:var(--muted);display:none"></div>
         <div id="spotify-playlists" style="display:none;margin-top:12px"></div>
         <button class="btn btn-p" id="spotify-import-btn" onclick="importSpotify()" disabled style="display:none;margin-top:12px">Extract artists →</button>
       </div>
 
-      <!-- Option 3: Manual -->
+      <!-- Option 4: Manual -->
       <div class="upload-card">
-        <div class="upload-card-title">// Option 3 — Add artists manually</div>
-        <div class="manual-hint" style="margin-bottom:16px">Type an artist name and press Enter or click Add. Suggestions come from artists who have played Berlin, London or Amsterdam in the last 2 years.</div>
+        <div class="upload-card-title">// Option 4 — Add artists manually</div>
+        <div class="manual-hint" style="margin-bottom:16px">Search and add artists one by one from our Berlin, London and Amsterdam database. Only artists who have played these cities will appear.</div>
         <button class="btn btn-p" onclick="goEditArtists()">Edit my artist list →</button>
         <input type="text" id="manual-input" style="display:none" autocomplete="off" spellcheck="false">
         <div id="autocomplete-dropdown" style="display:none"></div>
@@ -1271,6 +1287,62 @@ function copyShareLink(e){
     btn.textContent='Copied!';
     setTimeout(()=>btn.textContent=orig, 1500);
   });
+}
+
+// ─── SoundCloud Playlist Import ───────────────────────────────────────────────
+function showSCStatus(msg){
+  const el=document.getElementById('sc-playlist-status');
+  el.textContent=msg; el.style.display=msg?'block':'none';
+}
+
+async function importSCPlaylist(){
+  const inp=document.getElementById('sc-playlist-input');
+  const url=inp.value.trim();
+  if(!url){showSCStatus('Please paste a SoundCloud playlist URL');return;}
+  if(!url.includes('soundcloud.com')){showSCStatus('Must be a soundcloud.com URL');return;}
+  if(!url.includes('/sets/')){showSCStatus('Must be a playlist URL — should contain /sets/');return;}
+
+  const btn=document.getElementById('sc-playlist-btn');
+  btn.disabled=true; btn.textContent='Importing...';
+  showSCStatus('Fetching playlist...');
+
+  try{
+    const res=await fetch('/api/sc',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({url})
+    });
+    const d=await res.json();
+    if(d.error) throw new Error(d.error);
+
+    const allArtists=d.artists||[];
+    // Filter against RA index
+    const inIndex=allArtists.filter(n=>isVerified(n));
+    const notInIndex=allArtists.length-inIndex.length;
+    // Filter dupes
+    const newArtists=inIndex.filter(n=>!selected.has(n.toLowerCase()));
+    const alreadyHave=inIndex.length-newArtists.length;
+
+    if(!newArtists.length){
+      showSCStatus(`No new artists found in RA database. (${d.total} tracks scanned, ${notInIndex} not in database${alreadyHave?`, ${alreadyHave} already in your list`:''}).`);
+      btn.disabled=false; btn.textContent='Import playlist →';
+      return;
+    }
+
+    // Show preview — reuse Spotify preview flow
+    spotifyImportedArtists=newArtists.sort((a,b)=>a.localeCompare(b));
+    showSCStatus('');
+    btn.disabled=false; btn.textContent='Import playlist →';
+    const indexMsg=notInIndex>0?` · ${notInIndex} not in RA database`:'';
+    const dupeMsg=alreadyHave>0?` · ${alreadyHave} already in your list`:'';
+    showSpotifyStatus('Found '+newArtists.length+' new artists from '+d.total+' tracks'+indexMsg+dupeMsg+'.');
+    // Use Spotify preview UI
+    document.getElementById('spotify-playlists').style.display='block';
+    showSpotifyPreview();
+  }catch(e){
+    showSCStatus('Failed: '+e.message);
+    btn.disabled=false; btn.textContent='Import playlist →';
+  }
 }
 
 // ─── Spotify OAuth ────────────────────────────────────────────────────────────
