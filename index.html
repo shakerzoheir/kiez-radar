@@ -639,7 +639,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   // Restore Spotify session if token exists — just update button label, don't auto-load
   const tok=sessionStorage.getItem('spotify_token');
   if(tok){
-    document.getElementById('spotify-connect-btn').textContent='Reconnect Spotify';
+    document.getElementById('spotify-connect-btn').textContent='✓ Connected to Spotify';
+    document.getElementById('spotify-connect-btn').style.opacity='0.6';
   }
 });
 
@@ -1225,10 +1226,9 @@ async function handleSpotifyCallback(){
     if(!tok.access_token)throw new Error(tok.error_description||JSON.stringify(tok)||'Token exchange failed');
     sessionStorage.setItem('spotify_token',tok.access_token);
     sessionStorage.removeItem('spotify_verifier');
-    // Don't remove spotify_returning here — onSignedIn needs it
-    // Don't call goStep here — onSignedIn will navigate to s1
-    // Store token and wait for onSignedIn to finish, then load playlists
     sessionStorage.setItem('spotify_load_playlists','1');
+    const cb=document.getElementById('spotify-connect-btn');
+    if(cb){cb.textContent='✓ Connected to Spotify';cb.style.opacity='0.6';}
   }catch(e){
     showSpotifyStatus('Failed: '+e.message);
   }
@@ -1269,6 +1269,8 @@ async function loadSpotifyPlaylists(token){
     }
     renderSpotifyPlaylists(playlists, myUserId);
     showSpotifyStatus('');
+    const cb=document.getElementById('spotify-connect-btn');
+    if(cb){cb.textContent='✓ Connected to Spotify';cb.style.opacity='0.6';}
   }catch(e){
     showSpotifyStatus('Could not load playlists: '+e.message);
   }
@@ -1408,8 +1410,12 @@ function confirmSpotifyImport(){
     artists.push({name, pls:['Spotify'], count:1});
   });
   autoSave();
-  renderPills(); updateMeta(); goStep('s2');
-  showSpotifyStatus(`${toAdd.length} artists added.`);
+  renderReview();
+  goStep('s2');
+  // Show success message on the review screen
+  const meta=document.getElementById('meta');
+  if(meta) meta.innerHTML=`<span style="color:var(--accent);font-family:var(--mono);font-size:12px">✓ ${toAdd.length} artist${toAdd.length!==1?'s':''} added from Spotify</span>`;
+  setTimeout(()=>{if(meta)renderReview();},3000);
 }
 
 function showSpotifyStatus(msg){
