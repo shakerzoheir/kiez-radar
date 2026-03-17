@@ -397,6 +397,11 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
           <div class="save-dot" id="view-save-dot"></div>
           <span id="view-save-status">Saved</span>
         </div>
+        <!-- Pills first — filtered live as you type -->
+        <div class="sec-label">My artists (<span id="view-count"></span>) — click × to remove</div>
+        <div class="pills" id="view-pills" style="margin-top:10px;margin-bottom:20px"></div>
+        <!-- Add input below pills -->
+        <div class="manual-hint" style="margin-bottom:8px">Type an artist name and press Enter or click Add. Suggestions come from artists who have played Berlin, London or Amsterdam in the last 2 years.</div>
         <div class="add-row">
           <div class="autocomplete-wrap" style="flex:1">
             <input type="text" class="autocomplete-input" id="view-addinput" placeholder="Add artist..." autocomplete="off" spellcheck="false">
@@ -404,10 +409,7 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
           </div>
           <button class="btn-s" onclick="viewAddArtist()">+ ADD</button>
         </div>
-        <div id="view-dupe-msg" style="font-family:var(--mono);font-size:11px;color:var(--accent2);margin-bottom:10px;display:none"></div>
-        <div class="manual-hint" style="margin-bottom:8px">Type an artist name and press Enter or click Add. Suggestions come from artists who have played Berlin, London or Amsterdam in the last 2 years.</div>
-        <div class="sec-label" style="margin-top:12px">My artists (<span id="view-count"></span>) — click × to remove</div>
-        <div class="pills" id="view-pills" style="margin-top:10px"></div>
+        <div id="view-dupe-msg" style="font-family:var(--mono);font-size:11px;color:var(--accent2);margin-top:8px;display:none"></div>
       </div>
     </div>
   </div>
