@@ -1625,6 +1625,30 @@ function renderViewPills(){
     document.getElementById('view-addinput').value=name;
     viewAddArtist();
   });
+  // Live filter existing pills as user types
+  const inp=document.getElementById('view-addinput');
+  inp.addEventListener('input',()=>{
+    const q=inp.value.trim().toLowerCase();
+    const pills=[...document.querySelectorAll('#view-pills .pill')];
+    pills.forEach(p=>{
+      const name=p.querySelector('span')?.textContent?.toLowerCase()||'';
+      if(!q){
+        p.style.display='';
+        p.style.background='';
+        p.style.borderColor='';
+      } else if(name.includes(q)){
+        p.style.display='';
+        p.style.background='rgba(232,255,0,.12)';
+        p.style.borderColor='rgba(232,255,0,.5)';
+      } else {
+        p.style.display='none';
+      }
+    });
+    // Show count of matches
+    const matches=pills.filter(p=>p.style.display!=='none').length;
+    const countEl=document.getElementById('view-count');
+    if(countEl) countEl.textContent=q?matches+' matching':artists.length;
+  });
 }
 function renderViewPanel(){
   viewEditMode=false;
