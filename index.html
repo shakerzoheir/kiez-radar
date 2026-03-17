@@ -1239,6 +1239,11 @@ async function loadSpotifyPlaylists(token){
   document.getElementById('spotify-playlists').style.display='none';
   document.getElementById('spotify-import-btn').style.display='none';
   try{
+    // Get real user ID first
+    const meRes=await fetch('https://api.spotify.com/v1/me',{headers:{Authorization:'Bearer '+token}});
+    const me=await meRes.json();
+    if(me.error) throw new Error(me.error.message);
+    const myUserId=me.id;
     let playlists=[], url='https://api.spotify.com/v1/me/playlists?limit=50';
     while(url){
       const res=await fetch(url,{headers:{Authorization:'Bearer '+token}});
@@ -1262,20 +1267,19 @@ async function loadSpotifyPlaylists(token){
       document.getElementById('spotify-connect-btn').textContent='Connect Spotify →';
       return;
     }
-    renderSpotifyPlaylists(playlists);
+    renderSpotifyPlaylists(playlists, myUserId);
     showSpotifyStatus('');
   }catch(e){
     showSpotifyStatus('Could not load playlists: '+e.message);
   }
 }
 
-function renderSpotifyPlaylists(playlists){
+function renderSpotifyPlaylists(playlists, myUserId){
   const wrap=document.getElementById('spotify-playlists');
   wrap.innerHTML='<div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:8px;letter-spacing:.08em">SELECT PLAYLISTS TO IMPORT</div>';
-  // Only show playlists the user owns — Spotify Feb 2026 restricts track access to owned playlists
-  const myId=playlists.find(p=>p.owner)?.owner?.id;
-  const owned=playlists.filter(p=>p.owner?.id===myId);
-  const others=playlists.filter(p=>p.owner?.id!==myId);
+  // Only owned + collaborative playlists — Spotify Feb 2026 restricts track access
+  const owned=playlists.filter(p=>p.owner?.id===myUserId || p.collaborative);
+  const others=playlists.filter(p=>p.owner?.id!==myUserId && !p.collaborative);
 
   if(owned.length===0){
     wrap.innerHTML+='<div style="color:var(--muted);font-size:11px;font-family:var(--mono);padding:8px 0">No playlists found that you own.</div>';
@@ -1320,7 +1324,7 @@ async function importSpotify(){
       const pname=cb.closest('label')?.querySelector('span')?.textContent||pid;
       showSpotifyStatus(`Fetching: ${pname}...`);
       // Try items endpoint (works better in dev mode for some playlists)
-      let url=`https://api.spotify.com/v1/playlists/${pid}/tracks?limit=50&market=DE`;
+      let url=`https://api.spotify.com/v1/playlists/${pid}/items?limit=100`;
       let ok=false;
       while(url){
         const res=await fetch(url,{headers:{Authorization:'Bearer '+token,'Accept':'application/json'}});
@@ -1339,7 +1343,8 @@ async function importSpotify(){
         }
         ok=true;
         (d.items||[]).forEach(item=>{
-          const track=item?.track;
+          // Feb 2026: field renamed from .track to .item
+          const track=item?.item??item?.track;
           if(!track) return;
           (track.artists||[]).forEach(a=>{if(a?.name)newArtists.add(a.name.trim());});
         });
