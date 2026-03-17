@@ -1238,20 +1238,15 @@ function addToCalendar(e){
     'END:VEVENT',
     'END:VCALENDAR'
   ].join('\r\n');
-  // Safari on iOS handles data: URI directly opening Calendar
-  // Chrome on iOS needs blob download instead
-  const isSafari=/^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-  if(isSafari){
-    const encoded=encodeURIComponent(ics);
-    window.location.href='data:text/calendar;charset=utf-8,'+encoded;
-  } else {
-    const blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(blob);
-    a.download='event.ics';
-    a.click();
-    URL.revokeObjectURL(a.href);
-  }
+  // Blob download — iOS shows 'Open in Calendar' in the download notification
+  const blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='event.ics';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
   // Close popup
   document.getElementById('share-popup').classList.remove('open');
   document.removeEventListener('mousedown', closeShareOutside);
