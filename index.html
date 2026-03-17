@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>KIEZ RADAR — Berlin Event Finder</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -219,7 +219,7 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
   #view-pills .pill .x{font-size:15px;margin-left:6px;padding:0 2px}
   .add-row{gap:8px}
   .add-row .btn-s{padding:10px 14px;font-size:11px;white-space:nowrap}
-  .autocomplete-input{font-size:13px;padding:12px 13px}
+  .autocomplete-input{font-size:16px;padding:12px 13px}
   .manual-hint{font-size:12px}
 
   /* My Artists header mobile */
@@ -1639,6 +1639,7 @@ function renderViewReadonly(){
   });
 }
 function renderViewPills(){
+  const scrollY=window.scrollY;
   const c=document.getElementById('view-pills');
   dedupArtists();
   document.getElementById('view-count').textContent=artists.length;
@@ -1663,6 +1664,8 @@ function renderViewPills(){
     pill.appendChild(ns);pill.appendChild(xb);
     c.appendChild(pill);
   });
+  // Restore scroll position after re-render
+  requestAnimationFrame(()=>window.scrollTo(0, scrollY));
   setupAutocomplete('view-addinput','view-add-dropdown',(name)=>{
     document.getElementById('view-addinput').value=name;
     viewAddArtist();
