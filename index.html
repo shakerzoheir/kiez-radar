@@ -326,6 +326,13 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
 
     </div>
 
+    <!-- Shared import preview panel -->
+    <div id="import-preview-panel" style="display:none;margin-top:24px">
+      <div class="panel">
+        <div id="import-preview-inner"></div>
+      </div>
+    </div>
+
     <div class="err" id="uerr"></div>
   </div>
 
@@ -1336,8 +1343,6 @@ async function importSCPlaylist(){
     const indexMsg=notInIndex>0?` · ${notInIndex} not in RA database`:'';
     const dupeMsg=alreadyHave>0?` · ${alreadyHave} already in your list`:'';
     showSpotifyStatus('Found '+newArtists.length+' new artists from '+d.total+' tracks'+indexMsg+dupeMsg+'.');
-    // Use Spotify preview UI
-    document.getElementById('spotify-playlists').style.display='block';
     showSpotifyPreview();
   }catch(e){
     showSCStatus('Failed: '+e.message);
@@ -1422,6 +1427,7 @@ async function loadSpotifyPlaylists(token){
   showSpotifyStatus('Loading your playlists...');
   document.getElementById('spotify-playlists').style.display='none';
   document.getElementById('spotify-import-btn').style.display='none';
+  document.getElementById('import-preview-panel').style.display='none';
   try{
     // Get real user ID first
     const meRes=await fetch('https://api.spotify.com/v1/me',{headers:{Authorization:'Bearer '+token}});
@@ -1559,14 +1565,18 @@ async function importSpotify(){
 }
 
 function showSpotifyPreview(){
-  const wrap=document.getElementById('spotify-playlists');
+  const panel=document.getElementById('import-preview-panel');
+  const inner=document.getElementById('import-preview-inner');
   const total=spotifyImportedArtists.length;
-  wrap.innerHTML=`
+  panel.style.display='block';
+  // Scroll to preview
+  setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'nearest'}),50);
+  inner.innerHTML=`
     <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:10px;letter-spacing:.08em">${total} NEW ARTISTS FOUND — DESELECT ANY YOU DON'T WANT</div>
     <div id="spotify-preview-pills" style="display:flex;flex-wrap:wrap;gap:6px;max-height:240px;overflow-y:auto;margin-bottom:14px"></div>
-    <div style="display:flex;gap:8px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn btn-p" id="spotify-confirm-btn" onclick="confirmSpotifyImport()">Add ${spotifyImportedArtists.length} artists to my list →</button>
-      <button class="btn-s" onclick="loadSpotifyPlaylists(sessionStorage.getItem('spotify_token'))">← Back to playlists</button>
+      <button class="btn-s" onclick="document.getElementById('import-preview-panel').style.display='none'">← Back</button>
     </div>`;
   const pillWrap=document.getElementById('spotify-preview-pills');
   spotifyImportedArtists.forEach((name,i)=>{
