@@ -1195,14 +1195,23 @@ function openShare(e, idx){
   document.getElementById('share-wa').href=`https://wa.me/?text=${waText}`;
   document.getElementById('share-ra').href=url;
   popup.classList.add('open');
-  setTimeout(()=>document.addEventListener('mousedown', closeShareOutside), 10);
+  setTimeout(()=>{
+    document.addEventListener('mousedown', closeShareOutside);
+    window.addEventListener('scroll', closeShareOnScroll, {passive:true});
+  }, 10);
 }
 function closeShareOutside(e){
   const popup=document.getElementById('share-popup');
   if(!popup.contains(e.target)){
     popup.classList.remove('open');
     document.removeEventListener('mousedown', closeShareOutside);
+    window.removeEventListener('scroll', closeShareOnScroll);
   }
+}
+function closeShareOnScroll(){
+  document.getElementById('share-popup').classList.remove('open');
+  document.removeEventListener('mousedown', closeShareOutside);
+  window.removeEventListener('scroll', closeShareOnScroll);
 }
 function addToCalendar(e){
   e.preventDefault();
@@ -1229,16 +1238,24 @@ function addToCalendar(e){
     'END:VEVENT',
     'END:VCALENDAR'
   ].join('\r\n');
-  // Trigger download — iOS intercepts .ics and opens Calendar
-  const blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='event.ics';
-  a.click();
-  URL.revokeObjectURL(a.href);
+  // Safari on iOS handles data: URI directly opening Calendar
+  // Chrome on iOS needs blob download instead
+  const isSafari=/^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  if(isSafari){
+    const encoded=encodeURIComponent(ics);
+    window.location.href='data:text/calendar;charset=utf-8,'+encoded;
+  } else {
+    const blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='event.ics';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
   // Close popup
   document.getElementById('share-popup').classList.remove('open');
   document.removeEventListener('mousedown', closeShareOutside);
+  window.removeEventListener('scroll', closeShareOnScroll);
 }
 
 function copyShareLink(e){
