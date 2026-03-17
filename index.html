@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KIEZ RADAR — Berlin Gig Finder</title>
+<title>KIEZ RADAR — Berlin Event Finder</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script async crossorigin="anonymous" data-clerk-publishable-key="pk_test_bGl2ZS1zaHJpbXAtNTguY2xlcmsuYWNjb3VudHMuZGV2JA"
@@ -208,10 +208,10 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
 
 <header>
   <div class="logo" onclick="goMyGigs()" style="cursor:pointer">KIEZ<br>RADAR</div>
-  <div class="logo-sub">Berlin gig finder<br>SoundCloud × Resident Advisor</div>
+  <div class="logo-sub">From your ears to the dancefloor<br>SoundCloud · Spotify · Resident Advisor</div>
   <div class="header-right" id="header-right" style="display:none">
     <span class="user-info" id="user-email"></span>
-    <button class="btn-s" onclick="goMyGigs()">My Gigs</button>
+    <button class="btn-s" onclick="goMyGigs()">My Events</button>
     <div class="dropdown-wrap" id="artists-dropdown-wrap">
       <button class="btn-s dropdown-trigger" onclick="toggleDropdown()">My Artists ▾</button>
       <div class="dropdown-menu" id="artists-dropdown">
@@ -315,7 +315,7 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
       <div class="sec-label" id="pillslbl">Artists</div>
       <div class="pills" id="pills"></div>
       <div class="btn-row">
-        <button class="btn btn-p" id="runbtn" onclick="run()">FIND BERLIN GIGS →</button>
+        <button class="btn btn-p" id="runbtn" onclick="run()">FIND BERLIN EVENTS →</button>
         <button class="btn-s" onclick="selectAll()">Select all</button>
         <button class="btn-s" onclick="selectNone()">Deselect all</button>
         <button class="btn-s" onclick="goStep('s1')">← Change list</button>
@@ -329,7 +329,7 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
   <!-- STEP 3: Results -->
   <div class="step" id="s3">
     <div class="res-hdr">
-      <div class="res-title" id="restitle">BERLIN GIGS</div>
+      <div class="res-title" id="restitle">BERLIN EVENTS</div>
       <div class="res-count" id="rescount"></div>
       <div style="margin-left:auto;display:flex;gap:8px;align-items:center;padding-bottom:4px">
         <button class="btn-s" id="range-btn" onclick="toggleTimeframe(event)">Mar — Jun 2026</button>
@@ -381,26 +381,42 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
 
   <!-- VIEW ARTISTS PANEL -->
   <div class="step" id="s-view">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
       <div style="font-family:var(--display);font-size:32px;letter-spacing:.04em">MY ARTISTS</div>
-      <button class="btn-s" onclick="closeView()">← Back</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn-s" id="view-edit-btn" onclick="toggleViewEdit()">Edit list</button>
+        <button class="btn-s" onclick="closeView()">← Back</button>
+      </div>
     </div>
-    <div class="panel">
-      <div class="meta" id="view-meta"></div>
-      <div class="save-row">
-        <div class="save-dot" id="view-save-dot"></div>
-        <span id="view-save-status">Saved</span>
-      </div>
-      <div class="add-row">
-        <div class="autocomplete-wrap" style="flex:1">
-          <input type="text" class="autocomplete-input" id="view-addinput" placeholder="Add artist..." autocomplete="off" spellcheck="false">
-          <div class="autocomplete-dropdown" id="view-add-dropdown"></div>
+
+    <!-- Sort controls (view mode only) -->
+    <div id="view-sort-bar" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+      <button class="tog" id="sort-alpha" onclick="setViewSort('alpha')">A–Z</button>
+      <button class="tog" id="sort-recent" onclick="setViewSort('recent')">Recently added</button>
+      <button class="tog" id="sort-dir" onclick="toggleSortDir()" style="min-width:32px">↑</button>
+    </div>
+
+    <!-- View mode: read-only list -->
+    <div id="view-readonly" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+
+    <!-- Edit mode -->
+    <div id="view-edit-panel" style="display:none">
+      <div class="panel" style="margin-top:0">
+        <div class="save-row">
+          <div class="save-dot" id="view-save-dot"></div>
+          <span id="view-save-status">Saved</span>
         </div>
-        <button class="btn-s" onclick="viewAddArtist()">+ ADD</button>
+        <div class="add-row">
+          <div class="autocomplete-wrap" style="flex:1">
+            <input type="text" class="autocomplete-input" id="view-addinput" placeholder="Add artist..." autocomplete="off" spellcheck="false">
+            <div class="autocomplete-dropdown" id="view-add-dropdown"></div>
+          </div>
+          <button class="btn-s" onclick="viewAddArtist()">+ ADD</button>
+        </div>
+        <div id="view-dupe-msg" style="font-family:var(--mono);font-size:11px;color:var(--accent2);margin-bottom:10px;display:none"></div>
+        <div class="sec-label" style="margin-top:12px">Artists (<span id="view-count"></span>) — click × to remove</div>
+        <div class="pills" id="view-pills" style="margin-top:10px"></div>
       </div>
-      <div id="view-dupe-msg" style="font-family:var(--mono);font-size:11px;color:var(--accent2);margin-bottom:10px;display:none"></div>
-      <div class="sec-label">Artists (<span id="view-count"></span>)</div>
-      <div class="pills" id="view-pills"></div>
     </div>
   </div>
 
@@ -1525,44 +1541,90 @@ function closeView(){
   goStep(window._prevStep || 's3');
 }
 
-function renderViewPanel(){
-  const c = document.getElementById('view-pills');
-  document.getElementById('view-count').textContent = artists.length;
-  document.getElementById('view-meta').innerHTML = `<span>${artists.length}</span> artists &nbsp;·&nbsp; <span>${selected.size}</span> selected`;
-  setViewSaveStatus('saved', 'Saved');
-  c.innerHTML = '';
-  artists.forEach(a => {
-    const pill = document.createElement('div');
-    const on = selected.has(a.name.toLowerCase());
-    const verified = isVerified(a.name);
-    pill.className = 'pill' + (on ? ' on' : '') + (verified ? ' verified' : '');
-    pill.title = (verified ? '✓ Confirmed Berlin artist — ' : '') + `${a.count}x`;
+let viewSort='alpha', viewSortDir=1, viewEditMode=false;
+
+function setViewSort(s){
+  viewSort=s;
+  document.getElementById('sort-alpha').classList.toggle('on', s==='alpha');
+  document.getElementById('sort-recent').classList.toggle('on', s==='recent');
+  renderViewReadonly();
+}
+function toggleSortDir(){
+  viewSortDir*=-1;
+  document.getElementById('sort-dir').textContent=viewSortDir===1?'↑':'↓';
+  renderViewReadonly();
+}
+function toggleViewEdit(){
+  viewEditMode=!viewEditMode;
+  document.getElementById('view-edit-btn').textContent=viewEditMode?'Done editing':'Edit list';
+  document.getElementById('view-edit-btn').classList.toggle('on', viewEditMode);
+  document.getElementById('view-sort-bar').style.display=viewEditMode?'none':'flex';
+  document.getElementById('view-readonly').style.display=viewEditMode?'none':'flex';
+  document.getElementById('view-edit-panel').style.display=viewEditMode?'block':'none';
+  if(viewEditMode) renderViewPills();
+  else renderViewReadonly();
+}
+function renderViewReadonly(){
+  const c=document.getElementById('view-readonly');
+  c.innerHTML='';
+  let sorted=[...artists];
+  if(viewSort==='alpha'){
+    sorted.sort((a,b)=>viewSortDir*a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+  } else {
+    // recent = preserve insertion order (index), direction toggles
+    if(viewSortDir===-1) sorted.reverse();
+  }
+  sorted.forEach(a=>{
+    const verified=isVerified(a.name);
+    const pill=document.createElement('div');
+    pill.className='pill on'+(verified?' verified':'');
+    pill.title=(verified?'✓ In RA index — ':'')+ a.name;
     if(verified){const vd=document.createElement('div');vd.className='vdot';pill.appendChild(vd);}
-    const ns = document.createElement('span'); ns.textContent = a.name;
-    const xb = document.createElement('span'); xb.className = 'x'; xb.textContent = '×';
-    xb.onclick = e => {
-      e.stopPropagation();
-      artists = artists.filter(b => b.name !== a.name);
-      selected.delete(a.name.toLowerCase());
-      autoSave();
-      renderViewPanel();
-      renderReview();
-    };
-    pill.appendChild(ns); pill.appendChild(xb);
-    pill.onclick = () => {
-      const k = a.name.toLowerCase();
-      if(selected.has(k)){selected.delete(k);pill.classList.remove('on');}
-      else{selected.add(k);pill.classList.add('on');}
-      document.getElementById('view-meta').innerHTML = `<span>${artists.length}</span> artists &nbsp;·&nbsp; <span>${selected.size}</span> selected`;
-    };
+    const ns=document.createElement('span');ns.textContent=a.name;
+    pill.appendChild(ns);
     c.appendChild(pill);
   });
-
-  // Setup autocomplete for view panel
+}
+function renderViewPills(){
+  const c=document.getElementById('view-pills');
+  document.getElementById('view-count').textContent=artists.length;
+  c.innerHTML='';
+  artists.forEach(a=>{
+    const verified=isVerified(a.name);
+    const pill=document.createElement('div');
+    pill.className='pill on'+(verified?' verified':'');
+    if(verified){const vd=document.createElement('div');vd.className='vdot';pill.appendChild(vd);}
+    const ns=document.createElement('span');ns.textContent=a.name;
+    const xb=document.createElement('span');xb.className='x';xb.textContent='×';
+    xb.style.cssText='opacity:1;cursor:pointer';
+    xb.onclick=e=>{
+      e.stopPropagation();
+      artists=artists.filter(b=>b.name!==a.name);
+      selected.delete(a.name.toLowerCase());
+      autoSave();
+      renderViewPills();
+      renderReview();
+    };
+    pill.appendChild(ns);pill.appendChild(xb);
+    c.appendChild(pill);
+  });
   setupAutocomplete('view-addinput','view-add-dropdown',(name)=>{
-    document.getElementById('view-addinput').value = name;
+    document.getElementById('view-addinput').value=name;
     viewAddArtist();
   });
+}
+function renderViewPanel(){
+  viewEditMode=false;
+  document.getElementById('view-edit-btn').textContent='Edit list';
+  document.getElementById('view-edit-btn').classList.remove('on');
+  document.getElementById('view-sort-bar').style.display='flex';
+  document.getElementById('view-readonly').style.display='flex';
+  document.getElementById('view-edit-panel').style.display='none';
+  // Init sort buttons
+  document.getElementById('sort-alpha').classList.toggle('on', viewSort==='alpha');
+  document.getElementById('sort-recent').classList.toggle('on', viewSort==='recent');
+  setViewSaveStatus('saved','Saved');
+  renderViewReadonly();
 }
 
 function viewAddArtist(){
