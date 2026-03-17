@@ -275,25 +275,25 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
       <!-- Option 1: SoundCloud -->
       <div class="upload-card">
         <div class="upload-card-title">// Option 1 — Import from SoundCloud</div>
-        <div class="manual-hint" style="margin-bottom:12px">Paste a link to your SoundCloud likes or any public playlist. We'll extract all artists and cross-check against our RA database automatically.</div>
+        <div class="manual-hint" style="margin-bottom:12px">Paste a SoundCloud playlist or likes link and we'll automatically find which artists are playing in your city.</div>
         <ol class="upload-steps">
-          <li>Open SoundCloud and go to your likes or a playlist</li>
-          <li>Copy the URL or share link<span class="note">Works with soundcloud.com/... and on.soundcloud.com/... links</span></li>
-          <li>Paste it below and press Import</li>
+          <li>Open SoundCloud in your browser</li>
+          <li>Go to your Likes or open any playlist</li>
+          <li>Copy the URL from the address bar</li>
+          <li>Paste it below and press Import<span class="note">Tip: your likes page is soundcloud.com/your-username/likes</span></li>
         </ol>
         <div style="display:flex;gap:8px;margin-top:auto">
-          <input type="text" class="autocomplete-input" id="sc-playlist-input" placeholder="soundcloud.com/you/likes or /sets/..." autocomplete="off" spellcheck="false" style="flex:1;font-size:13px">
+          <input type="text" class="autocomplete-input" id="sc-playlist-input" placeholder="soundcloud.com/username/likes" autocomplete="off" spellcheck="false" style="flex:1;font-size:13px">
         </div>
         <button class="btn btn-p" id="sc-playlist-btn" onclick="importSCPlaylist()" style="margin-top:8px">Import →</button>
         <div id="sc-playlist-status" style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:8px;display:none"></div>
-        <!-- Keep hidden CSV elements for any legacy code references -->
         <div id="uzone" style="display:none"><input type="file" id="finput" accept=".csv"></div>
       </div>
 
       <!-- Option 2: Spotify -->
       <div class="upload-card">
         <div class="upload-card-title">// Option 2 — Import from Spotify</div>
-        <div class="manual-hint" style="margin-bottom:12px">Connect your Spotify account and pick which playlists to import from. Only artists in our RA database will be added.</div>
+        <div class="manual-hint" style="margin-bottom:12px">Connect your Spotify account and pick which playlists to import from. Only artists in our database will be added.</div>
         <button class="btn btn-p" id="spotify-connect-btn" onclick="connectSpotify()" style="margin-bottom:12px">Connect Spotify →</button>
         <div id="spotify-status" style="font-family:var(--mono);font-size:11px;color:var(--muted);display:none"></div>
         <div id="spotify-playlists" style="display:none;margin-top:12px"></div>
@@ -303,7 +303,7 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
       <!-- Option 3: Manual -->
       <div class="upload-card">
         <div class="upload-card-title">// Option 3 — Add artists manually</div>
-        <div class="manual-hint" style="margin-bottom:16px">Search and add artists one by one from our Berlin, London and Amsterdam database. Only artists who have played these cities will appear.</div>
+        <div class="manual-hint" style="margin-bottom:16px">Search and add artists one by one from our database.</div>
         <button class="btn btn-p" onclick="goEditArtists()">Edit my artist list →</button>
         <input type="text" id="manual-input" style="display:none" autocomplete="off" spellcheck="false">
         <div id="autocomplete-dropdown" style="display:none"></div>
@@ -311,6 +311,7 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
       </div>
 
     </div>
+    <div style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:16px;line-height:1.6">Our database covers 34,164 artists who have played Berlin, London and Amsterdam on Resident Advisor in the last 2 years.</div>
 
     <!-- Shared import preview panel -->
     <div id="import-preview-panel" style="display:none;margin-top:24px">
