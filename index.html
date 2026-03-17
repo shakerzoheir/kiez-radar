@@ -1188,8 +1188,7 @@ function addToCalendar(e){
     `DESCRIPTION:${url}`,
     'END:VEVENT',
     'END:VCALENDAR'
-  ].join('
-');
+  ].join('\r\n');
   // Trigger download — iOS intercepts .ics and opens Calendar
   const blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});
   const a=document.createElement('a');
