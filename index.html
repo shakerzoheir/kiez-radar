@@ -47,6 +47,7 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
 .upload-options{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;margin-bottom:24px}
 .upload-card{background:var(--surface);border:1px solid var(--border);padding:28px;display:flex;flex-direction:column;gap:16px}
 .upload-card-title{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)}
+.upload-card-subtitle{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text);margin-bottom:8px;margin-top:4px}
 .upload-steps{list-style:none;display:flex;flex-direction:column;gap:10px}
 .upload-steps li{font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.6;padding-left:16px;position:relative}
 .upload-steps li::before{content:'→';position:absolute;left:0;color:var(--accent)}
@@ -275,15 +276,22 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
       <!-- Option 1: SoundCloud -->
       <div class="upload-card">
         <div class="upload-card-title">// Option 1 — Import from SoundCloud</div>
-        <div class="manual-hint" style="margin-bottom:12px">Paste a SoundCloud playlist or likes link and we'll automatically find which artists are playing in your city.</div>
-        <ol class="upload-steps">
-          <li>Open SoundCloud in your browser or app</li>
-          <li>Go to your Likes or open any playlist</li>
-          <li>Copy the URL from the address bar, or tap Share in the app and copy the link</li>
-          <li>Paste it below and press Import<span class="note">Tip: your likes page is soundcloud.com/your-username/likes</span></li>
-        </ol>
-        <div style="display:flex;gap:8px;margin-top:auto">
-          <input type="text" class="autocomplete-input" id="sc-playlist-input" placeholder="soundcloud.com/username/likes" autocomplete="off" spellcheck="false" style="flex:1;font-size:13px">
+
+        <div class="upload-card-subtitle">Your library</div>
+        <div class="manual-hint" style="margin-bottom:8px">Imports your likes and artists you follow in one go.</div>
+        <div class="manual-hint" style="margin-bottom:10px;font-size:10px">Browser: go to soundcloud.com, open your profile, copy the URL from the address bar.</div>
+        <div style="display:flex;gap:8px">
+          <input type="text" class="autocomplete-input" id="sc-profile-input" placeholder="soundcloud.com/your-username" autocomplete="off" spellcheck="false" style="flex:1;font-size:13px">
+        </div>
+        <button class="btn btn-p" id="sc-profile-btn" onclick="importSCProfile()" style="margin-top:8px">Import →</button>
+        <div id="sc-profile-status" style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:8px;display:none"></div>
+
+        <div class="upload-card-subtitle" style="margin-top:20px">Playlist</div>
+        <div class="manual-hint" style="margin-bottom:8px">Imports artists from a specific playlist.</div>
+        <div class="manual-hint" style="margin-bottom:4px;font-size:10px">Browser: open the playlist and copy the URL from the address bar.</div>
+        <div class="manual-hint" style="margin-bottom:10px;font-size:10px">App: open the playlist, tap ··· then Share, then Copy link.</div>
+        <div style="display:flex;gap:8px">
+          <input type="text" class="autocomplete-input" id="sc-playlist-input" placeholder="soundcloud.com/username/sets/..." autocomplete="off" spellcheck="false" style="flex:1;font-size:13px">
         </div>
         <button class="btn btn-p" id="sc-playlist-btn" onclick="importSCPlaylist()" style="margin-top:8px">Import →</button>
         <div id="sc-playlist-status" style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:8px;display:none"></div>
@@ -1284,6 +1292,51 @@ function copyShareLink(e){
 }
 
 // ─── SoundCloud Playlist Import ───────────────────────────────────────────────
+function showSCProfileStatus(msg){
+  const el=document.getElementById('sc-profile-status');
+  el.textContent=msg; el.style.display=msg?'block':'none';
+}
+
+async function importSCProfile(){
+  const inp=document.getElementById('sc-profile-input');
+  const url=inp.value.trim();
+  if(!url){showSCProfileStatus('Please paste your SoundCloud profile URL');return;}
+  if(!url.includes('soundcloud.com')){showSCProfileStatus('Must be a soundcloud.com URL');return;}
+  // Must be a bare profile URL, not likes/following/sets
+  if(url.includes('/sets/')||url.includes('/likes')||url.includes('/following')){
+    showSCProfileStatus('Paste your profile URL only — e.g. soundcloud.com/your-username');return;
+  }
+  const btn=document.getElementById('sc-profile-btn');
+  btn.disabled=true; btn.textContent='Importing...';
+  showSCProfileStatus('Fetching your library...');
+  try{
+    const res=await fetch('/api/sc',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({url, type:'profile'})
+    });
+    const d=await res.json();
+    if(d.error) throw new Error(d.error);
+    const allArtists=d.artists||[];
+    const inIndex=allArtists.filter(n=>isVerified(n));
+    const notInIndex=allArtists.length-inIndex.length;
+    const newArtists=inIndex.filter(n=>!selected.has(n.toLowerCase()));
+    const alreadyHave=inIndex.length-newArtists.length;
+    if(!newArtists.length){
+      showSCProfileStatus(`No new artists found in our database. (${d.total} tracks/follows scanned, ${notInIndex} not in database${alreadyHave?`, ${alreadyHave} already in your list`:''}).`);
+      btn.disabled=false; btn.textContent='Import →';
+      return;
+    }
+    spotifyImportedArtists=newArtists.sort((a,b)=>a.localeCompare(b));
+    showSCProfileStatus('');
+    btn.disabled=false; btn.textContent='Import →';
+    showSpotifyPreview();
+  }catch(e){
+    showSCProfileStatus('Failed: '+e.message);
+    btn.disabled=false; btn.textContent='Import →';
+  }
+}
+
 function showSCStatus(msg){
   const el=document.getElementById('sc-playlist-status');
   el.textContent=msg; el.style.display=msg?'block':'none';
