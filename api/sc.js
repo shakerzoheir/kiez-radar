@@ -73,7 +73,7 @@ async function getClientId() {
   return null;
 }
 
-async function fetchTracks(userId, clientId, type) {
+async function fetchUserItems(userId, clientId, type) {
   const endpoint = type === 'following'
     ? `https://api-v2.soundcloud.com/users/${userId}/followings?client_id=${clientId}&limit=100`
     : `https://api-v2.soundcloud.com/users/${userId}/likes?client_id=${clientId}&limit=100`;
@@ -103,6 +103,9 @@ export default async function handler(req, res) {
   let { url, type } = req.body || {};
   if (!url) return res.status(400).json({ error: 'No URL provided' });
 
+  // Strip trailing punctuation
+  url = url.trim().replace(/[.,;:!?]+$/, '');
+
   try {
     // Resolve short URLs
     if (url.includes('on.soundcloud.com')) {
@@ -129,7 +132,6 @@ export default async function handler(req, res) {
     let totalCount = 0;
 
     if (isProfile) {
-      // Fetch user profile first
       const userRes = await fetch(
         `https://api-v2.soundcloud.com/resolve?url=${encodeURIComponent(url)}&client_id=${clientId}`,
         { headers: { 'User-Agent': 'Mozilla/5.0' } }
@@ -137,15 +139,13 @@ export default async function handler(req, res) {
       const user = await userRes.json();
       if (!user.id) return res.status(400).json({ error: 'Could not find SoundCloud profile' });
 
-      // Fetch likes
-      const likes = await fetchTracks(user.id, clientId, 'likes');
+      const likes = await fetchUserItems(user.id, clientId, 'likes');
       likes.forEach(track => {
         extractCandidates(track.title || '', track.user?.username || '')
           .forEach(c => allCandidates.add(c));
       });
 
-      // Fetch following — these are user profiles, just extract usernames
-      const following = await fetchTracks(user.id, clientId, 'following');
+      const following = await fetchUserItems(user.id, clientId, 'following');
       following.forEach(u => {
         if (u.username) allCandidates.add(u.username.trim());
         if (u.full_name) allCandidates.add(u.full_name.trim());
@@ -160,15 +160,38 @@ export default async function handler(req, res) {
       );
       const resolved = await resolveRes.json();
       if (resolved.error) return res.status(400).json({ error: resolved.error });
-      const tracks = resolved.tracks || [];
-      tracks.forEach(track => {
+      const rawTracks = resolved.tracks || [];
+      totalCount = rawTracks.length;
+
+      // Separate full tracks from stubs (stubs have no title)
+      const fullTracks = rawTracks.filter(t => t.title);
+      const stubIds = rawTracks.filter(t => !t.title).map(t => t.id);
+
+      // Process full tracks immediately
+      fullTracks.forEach(track => {
         extractCandidates(track.title || '', track.user?.username || '')
           .forEach(c => allCandidates.add(c));
       });
-      totalCount = tracks.length;
+
+      // Fetch stubs in batches of 50
+      for (let i = 0; i < stubIds.length; i += 50) {
+        const batch = stubIds.slice(i, i + 50).join(',');
+        try {
+          const batchRes = await fetch(
+            `https://api-v2.soundcloud.com/tracks?ids=${batch}&client_id=${clientId}`,
+            { headers: { 'User-Agent': 'Mozilla/5.0' } }
+          );
+          const batchTracks = await batchRes.json();
+          if (Array.isArray(batchTracks)) {
+            batchTracks.forEach(track => {
+              extractCandidates(track.title || '', track.user?.username || '')
+                .forEach(c => allCandidates.add(c));
+            });
+          }
+        } catch {}
+      }
 
     } else {
-      // Likes or following URL directly
       const profileUrl = url.replace('/likes', '').replace('/following', '');
       const userRes = await fetch(
         `https://api-v2.soundcloud.com/resolve?url=${encodeURIComponent(profileUrl)}&client_id=${clientId}`,
@@ -178,7 +201,7 @@ export default async function handler(req, res) {
       if (!user.id) return res.status(400).json({ error: 'Could not find SoundCloud user' });
 
       const fetchType = isFollowing ? 'following' : 'likes';
-      const items = await fetchTracks(user.id, clientId, fetchType);
+      const items = await fetchUserItems(user.id, clientId, fetchType);
 
       if (isFollowing) {
         items.forEach(u => {
