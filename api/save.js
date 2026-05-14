@@ -30,11 +30,15 @@ export default async function handler(req, res) {
     const kvUrl = process.env.KV_REST_API_URL;
     const kvToken = process.env.KV_REST_API_TOKEN;
     const key = `user:${userId}:artists`;
-    const value = JSON.stringify(artists);
 
-    const response = await fetch(`${kvUrl}/set/${encodeURIComponent(key)}/${encodeURIComponent(value)}`, {
+    // Use POST body instead of URL encoding to avoid length limits
+    const response = await fetch(`${kvUrl}/set`, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${kvToken}` },
+      headers: {
+        'Authorization': `Bearer ${kvToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify([key, JSON.stringify(artists)]),
     });
 
     const result = await response.json();
