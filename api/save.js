@@ -30,22 +30,25 @@ export default async function handler(req, res) {
     const kvUrl = process.env.KV_REST_API_URL;
     const kvToken = process.env.KV_REST_API_TOKEN;
     const key = `user:${userId}:artists`;
+    const value = JSON.stringify(artists);
 
-    // Use POST body instead of URL encoding to avoid length limits
-    const response = await fetch(`${kvUrl}/set`, {
+    // Send value as plain text body to /set/key endpoint
+    const encodedKey = encodeURIComponent(key);
+    const response = await fetch(`${kvUrl}/set/${encodedKey}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${kvToken}`,
-        'Content-Type': 'application/json',
       },
-      body: JSON.stringify([key, JSON.stringify(artists)]),
+      body: value,
     });
 
     const result = await response.json();
+    console.log('Upstash response:', JSON.stringify(result));
     if (result.error) throw new Error(result.error);
 
     return res.status(200).json({ success: true, count: artists.length });
   } catch (err) {
+    console.error('Save error:', err.message);
     return res.status(500).json({ error: err.message });
   }
 }
