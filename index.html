@@ -1475,15 +1475,19 @@ async function loadSpotifyPlaylists(token){
     // Get real user ID first
     const meRes=await fetch('https://api.spotify.com/v1/me',{headers:{Authorization:'Bearer '+token}});
     const meText=await meRes.text();
+    console.log('Spotify /me raw response:', meText);
     let me;
     try{me=JSON.parse(meText);}catch(e){
       sessionStorage.removeItem('spotify_token');
       document.getElementById('spotify-connect-btn').textContent='Connect Spotify →';
       document.getElementById('spotify-connect-btn').style.opacity='1';
-      showSpotifyStatus('Your Spotify account is not authorized for this app. Ask the developer to add you.');
+      showSpotifyStatus('Not authorized: '+meText.slice(0,100));
       return;
     }
-    if(me.error) throw new Error(me.error.message);
+    if(me.error){
+      console.log('Spotify /me error:', JSON.stringify(me.error));
+      throw new Error(me.error.message);
+    }
     const myUserId=me.id;
     let playlists=[], url='https://api.spotify.com/v1/me/playlists?limit=50';
     while(url){
