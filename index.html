@@ -158,6 +158,10 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
 .etitle{font-family:var(--sans);font-weight:500;font-size:16px;color:var(--text);margin-bottom:6px;line-height:1.3}
 .evenue{font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:10px}
 .etags{display:flex;flex-wrap:wrap;gap:3px}
+.egenres{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
+.genre-tag{font-family:var(--mono);font-size:9px;letter-spacing:.08em;padding:2px 6px;border:1px solid var(--border);color:var(--muted);text-transform:uppercase}
+.genre-filter-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.genre-filter-bar .tog{font-size:10px;padding:5px 10px}
 .tag{font-family:var(--mono);font-size:10px;padding:2px 7px;background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
 .tag.hit{background:rgba(232,255,0,.1);color:var(--accent);border-color:rgba(232,255,0,.3)}
 .emeta{text-align:right}
@@ -470,7 +474,7 @@ if(window.location.search.includes('code=') && sessionStorage.getItem('spotify_v
   sessionStorage.setItem('spotify_returning','1');
 }
 let clerkInstance=null, currentUserId=null, appInitialized=false;
-let artistIndex=[], manualArtists=[];
+let artistIndex=[], manualArtists=[], activeGenres=new Set();
 let calViewDate=new Date(), calStart=null, calEnd=null;
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
@@ -1068,7 +1072,7 @@ function updateRangeBtn(){
 
 // ─── RA Fetch ─────────────────────────────────────────────────────────────────
 async function fetchPage(page,df,dt){
-  const q=`{eventListings(filters:{areas:{eq:34},listingDate:{gte:"${df}",lte:"${dt}"}},pageSize:100,page:${page}){data{event{title date venue{name}artists{name}contentUrl}}totalResults}}`;
+  const q=`{eventListings(filters:{areas:{eq:34},listingDate:{gte:"${df}",lte:"${dt}"}},pageSize:100,page:${page}){data{event{title date venue{name}artists{name}genres{name}contentUrl}}totalResults}}`;
   const ctrl=new AbortController();
   const timer=setTimeout(()=>ctrl.abort(),20000);
   try{
@@ -1084,6 +1088,7 @@ async function fetchPage(page,df,dt){
 }
 
 async function run(){
+  activeGenres.clear();
   const df=dateFrom||defaultDates().from;
   const dt=dateTo||defaultDates().to;
   dateFrom=df; dateTo=dt;
@@ -1172,16 +1177,66 @@ function renderResults(all){
       const arts=e.artists||[];
       const mc=arts.filter(a=>isHit(a.name)).length;
       const tags=arts.map(a=>`<span class="tag${isHit(a.name)?' hit':''}">${esc(a.name)}</span>`).join('');
+      const genres=e.genres||[];
+      const genreTags=genres.map(g=>`<span class="genre-tag">${esc(g.name)}</span>`).join('');
       const badge=mc>0?`<span class="mbadge">↑ ${mc} match${mc>1?'es':''}</span>`:'';
       const shareIcon=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`;
       const shareIdx=window._shareData.length;
       window._shareData.push({url, title:e.title, date:e.date?e.date.split('T')[0]:'', venue:e.venue?.name||''});
-      html+=`<div class="ecard"><div><div class="etitle">${esc(e.title)}</div><div class="evenue">⌖ ${esc(e.venue?.name||'TBA')}</div><div class="etags">${tags}</div></div><div class="emeta"><a class="elink" href="${url}" target="_blank">RA →</a>${badge}<button class="share-btn" onclick="openShare(event,${shareIdx})" title="Share">${shareIcon}</button></div></div>`;
+      html+=`<div class="ecard"><div><div class="etitle">${esc(e.title)}</div><div class="evenue">⌖ ${esc(e.venue?.name||'TBA')}</div><div class="etags">${tags}</div>${genreTags?`<div class="egenres">${genreTags}</div>`:''}</div><div class="emeta"><a class="elink" href="${url}" target="_blank">RA →</a>${badge}<button class="share-btn" onclick="openShare(event,${shareIdx})" title="Share">${shareIcon}</button></div></div>`;
     });
     html+='</div>';
   });
-  list.innerHTML=html;
-  document.getElementById('rescount').textContent=`// ${filtered.length} event${filtered.length!==1?'s':''}`;
+  // Build genre filter bar from available genres
+  const allGenres=new Set();
+  filtered.forEach(i=>(i.event.genres||[]).forEach(g=>allGenres.add(g.name)));
+  const bar=document.getElementById('genre-filter-bar');
+  if(allGenres.size>1){
+    bar.style.display='flex';
+    bar.innerHTML=[...allGenres].sort().map(g=>
+      `<button class="tog${activeGenres.has(g)?' on':''}" onclick="toggleGenre('${g}')">${g}</button>`
+    ).join('');
+  } else {
+    bar.style.display='none';
+  }
+
+  // Apply genre filter
+  let displayFiltered=filtered;
+  if(activeGenres.size>0){
+    displayFiltered=filtered.filter(i=>(i.event.genres||[]).some(g=>activeGenres.has(g.name)));
+  }
+
+  // Re-render with genre filter applied
+  const byDateG={};
+  displayFiltered.forEach(i=>{const d=i.event.date?.split('T')[0]||'TBA';if(!byDateG[d])byDateG[d]=[];byDateG[d].push(i);});
+  if(activeGenres.size>0){
+    window._shareData=[];
+    let html2='';
+    Object.keys(byDateG).sort().forEach(d=>{
+      const count=byDateG[d].length;
+      const countBadge=`<span style="font-family:var(--mono);font-size:9px;background:var(--surface2);border:1px solid var(--border);padding:2px 7px;margin-left:10px;letter-spacing:.05em;vertical-align:middle;color:var(--muted)">${count} event${count!==1?'s':''}</span>`;
+      html2+=`<div class="date-grp"><div class="date-lbl">${fmtDate(d)}${countBadge}</div>`;
+      byDateG[d].forEach(i=>{
+        const e=i.event,url=e.contentUrl?`https://ra.co${e.contentUrl}`:'https://ra.co/events/de/berlin';
+        const arts=e.artists||[];
+        const mc=arts.filter(a=>isHit(a.name)).length;
+        const tags=arts.map(a=>`<span class="tag${isHit(a.name)?' hit':''}">${esc(a.name)}</span>`).join('');
+        const genres=e.genres||[];
+        const genreTags=genres.map(g=>`<span class="genre-tag">${esc(g.name)}</span>`).join('');
+        const badge=mc>0?`<span class="mbadge">↑ ${mc} match${mc>1?'es':''}</span>`:'';
+        const shareIcon=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`;
+        const shareIdx=window._shareData.length;
+        window._shareData.push({url, title:e.title, date:e.date?e.date.split('T')[0]:'', venue:e.venue?.name||''});
+        html2+=`<div class="ecard"><div><div class="etitle">${esc(e.title)}</div><div class="evenue">⌖ ${esc(e.venue?.name||'TBA')}</div><div class="etags">${tags}</div>${genreTags?`<div class="egenres">${genreTags}</div>`:''}</div><div class="emeta"><a class="elink" href="${url}" target="_blank">RA →</a>${badge}<button class="share-btn" onclick="openShare(event,${shareIdx})" title="Share">${shareIcon}</button></div></div>`;
+      });
+      html2+='</div>';
+    });
+    list.innerHTML=html2;
+    document.getElementById('rescount').textContent=`// ${displayFiltered.length} event${displayFiltered.length!==1?'s':''}`;
+  } else {
+    list.innerHTML=html;
+    document.getElementById('rescount').textContent=`// ${filtered.length} event${filtered.length!==1?'s':''}`;
+  }
   document.getElementById('restitle').textContent=all?'ALL BERLIN':'YOUR ARTISTS';
 }
 function widenRange(){
@@ -1675,6 +1730,12 @@ function showSpotifyStatus(msg){
   const el=document.getElementById('spotify-status');
   el.textContent=msg;
   el.style.display=msg?'block':'none';
+}
+
+function toggleGenre(g){
+  if(activeGenres.has(g)) activeGenres.delete(g);
+  else activeGenres.add(g);
+  renderResults(showAll);
 }
 
 function filterByDay(val){
