@@ -1151,7 +1151,26 @@ function renderResults(all){
   const seen=new Set();
   let evts=events.filter(i=>{const u=i.event?.contentUrl;if(seen.has(u))return false;seen.add(u);return true;});
   if(selectedDay)evts=evts.filter(i=>i.event.date?.split('T')[0]===selectedDay);
-  const filtered=all?evts:evts.filter(i=>(i.event.artists||[]).some(a=>isHit(a.name)));
+  let filtered=all?evts:evts.filter(i=>(i.event.artists||[]).some(a=>isHit(a.name)));
+
+  // Build genre filter bar
+  const allGenres=new Set();
+  filtered.forEach(i=>(i.event.genres||[]).forEach(g=>allGenres.add(g.name)));
+  const bar=document.getElementById('genre-filter-bar');
+  if(allGenres.size>1){
+    bar.style.display='flex';
+    bar.innerHTML=[...allGenres].sort().map(g=>
+      `<button class="tog${activeGenres.has(g)?' on':''}" onclick="toggleGenre('${g}')">${esc(g)}</button>`
+    ).join('');
+  } else {
+    bar.style.display='none';
+  }
+
+  // Apply genre filter
+  if(activeGenres.size>0){
+    filtered=filtered.filter(i=>(i.event.genres||[]).some(g=>activeGenres.has(g.name)));
+  }
+
   const nores=document.getElementById('nores');
   if(!filtered.length){
     const noResMsg=nores.querySelector('.nores-msg');
@@ -1164,6 +1183,7 @@ function renderResults(all){
     return;
   }
   nores.style.display='none';
+
   const byDate={};
   filtered.forEach(i=>{const d=i.event.date?.split('T')[0]||'TBA';if(!byDate[d])byDate[d]=[];byDate[d].push(i);});
   window._shareData=[];
@@ -1182,61 +1202,13 @@ function renderResults(all){
       const badge=mc>0?`<span class="mbadge">↑ ${mc} match${mc>1?'es':''}</span>`:'';
       const shareIcon=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`;
       const shareIdx=window._shareData.length;
-      window._shareData.push({url, title:e.title, date:e.date?e.date.split('T')[0]:'', venue:e.venue?.name||''});
+      window._shareData.push({url,title:e.title,date:e.date?e.date.split('T')[0]:'',venue:e.venue?.name||''});
       html+=`<div class="ecard"><div><div class="etitle">${esc(e.title)}</div><div class="evenue">⌖ ${esc(e.venue?.name||'TBA')}</div><div class="etags">${tags}</div>${genreTags?`<div class="egenres">${genreTags}</div>`:''}</div><div class="emeta"><a class="elink" href="${url}" target="_blank">RA →</a>${badge}<button class="share-btn" onclick="openShare(event,${shareIdx})" title="Share">${shareIcon}</button></div></div>`;
     });
     html+='</div>';
   });
-  // Build genre filter bar from available genres
-  const allGenres=new Set();
-  filtered.forEach(i=>(i.event.genres||[]).forEach(g=>allGenres.add(g.name)));
-  const bar=document.getElementById('genre-filter-bar');
-  if(allGenres.size>1){
-    bar.style.display='flex';
-    bar.innerHTML=[...allGenres].sort().map(g=>
-      `<button class="tog${activeGenres.has(g)?' on':''}" onclick="toggleGenre('${g}')">${g}</button>`
-    ).join('');
-  } else {
-    bar.style.display='none';
-  }
-
-  // Apply genre filter
-  let displayFiltered=filtered;
-  if(activeGenres.size>0){
-    displayFiltered=filtered.filter(i=>(i.event.genres||[]).some(g=>activeGenres.has(g.name)));
-  }
-
-  // Re-render with genre filter applied
-  const byDateG={};
-  displayFiltered.forEach(i=>{const d=i.event.date?.split('T')[0]||'TBA';if(!byDateG[d])byDateG[d]=[];byDateG[d].push(i);});
-  if(activeGenres.size>0){
-    window._shareData=[];
-    let html2='';
-    Object.keys(byDateG).sort().forEach(d=>{
-      const count=byDateG[d].length;
-      const countBadge=`<span style="font-family:var(--mono);font-size:9px;background:var(--surface2);border:1px solid var(--border);padding:2px 7px;margin-left:10px;letter-spacing:.05em;vertical-align:middle;color:var(--muted)">${count} event${count!==1?'s':''}</span>`;
-      html2+=`<div class="date-grp"><div class="date-lbl">${fmtDate(d)}${countBadge}</div>`;
-      byDateG[d].forEach(i=>{
-        const e=i.event,url=e.contentUrl?`https://ra.co${e.contentUrl}`:'https://ra.co/events/de/berlin';
-        const arts=e.artists||[];
-        const mc=arts.filter(a=>isHit(a.name)).length;
-        const tags=arts.map(a=>`<span class="tag${isHit(a.name)?' hit':''}">${esc(a.name)}</span>`).join('');
-        const genres=e.genres||[];
-        const genreTags=genres.map(g=>`<span class="genre-tag">${esc(g.name)}</span>`).join('');
-        const badge=mc>0?`<span class="mbadge">↑ ${mc} match${mc>1?'es':''}</span>`:'';
-        const shareIcon=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`;
-        const shareIdx=window._shareData.length;
-        window._shareData.push({url, title:e.title, date:e.date?e.date.split('T')[0]:'', venue:e.venue?.name||''});
-        html2+=`<div class="ecard"><div><div class="etitle">${esc(e.title)}</div><div class="evenue">⌖ ${esc(e.venue?.name||'TBA')}</div><div class="etags">${tags}</div>${genreTags?`<div class="egenres">${genreTags}</div>`:''}</div><div class="emeta"><a class="elink" href="${url}" target="_blank">RA →</a>${badge}<button class="share-btn" onclick="openShare(event,${shareIdx})" title="Share">${shareIcon}</button></div></div>`;
-      });
-      html2+='</div>';
-    });
-    list.innerHTML=html2;
-    document.getElementById('rescount').textContent=`// ${displayFiltered.length} event${displayFiltered.length!==1?'s':''}`;
-  } else {
-    list.innerHTML=html;
-    document.getElementById('rescount').textContent=`// ${filtered.length} event${filtered.length!==1?'s':''}`;
-  }
+  list.innerHTML=html;
+  document.getElementById('rescount').textContent=`// ${filtered.length} event${filtered.length!==1?'s':''}`;
   document.getElementById('restitle').textContent=all?'ALL BERLIN':'YOUR ARTISTS';
 }
 function widenRange(){
