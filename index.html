@@ -4,20 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KIEZ RADAR — Berlin Event Finder</title>
-
-<!-- PWA -->
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#0a0a0a">
-<meta name="mobile-web-app-capable" content="yes">
-
-<!-- iOS PWA -->
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Kiez Radar">
-<link rel="apple-touch-icon" href="/icon-192.png">
-
-<!-- iOS splash screens -->
-<meta name="apple-touch-startup-image" href="/icon-512.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script async crossorigin="anonymous" data-clerk-publishable-key="pk_test_bGl2ZS1zaHJpbXAtNTguY2xlcmsuYWNjb3VudHMuZGV2JA"
@@ -30,8 +16,7 @@
   --accent:#e8ff00;--accent2:#ff3d00;--text:#e8e8e8;--muted:#999;
   --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;--display:'Bebas Neue',sans-serif;
 }
-body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden;overscroll-behavior:none}
-html{overscroll-behavior:none}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden}
 body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:9999;opacity:.4}
 header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap}
 .logo{font-family:var(--display);font-size:clamp(52px,8vw,88px);letter-spacing:.04em;line-height:.9;color:var(--accent)}
@@ -1489,7 +1474,15 @@ async function loadSpotifyPlaylists(token){
   try{
     // Get real user ID first
     const meRes=await fetch('https://api.spotify.com/v1/me',{headers:{Authorization:'Bearer '+token}});
-    const me=await meRes.json();
+    const meText=await meRes.text();
+    let me;
+    try{me=JSON.parse(meText);}catch(e){
+      sessionStorage.removeItem('spotify_token');
+      document.getElementById('spotify-connect-btn').textContent='Connect Spotify →';
+      document.getElementById('spotify-connect-btn').style.opacity='1';
+      showSpotifyStatus('Your Spotify account is not authorized for this app. Ask the developer to add you.');
+      return;
+    }
     if(me.error) throw new Error(me.error.message);
     const myUserId=me.id;
     let playlists=[], url='https://api.spotify.com/v1/me/playlists?limit=50';
