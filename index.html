@@ -1147,7 +1147,39 @@ function renderResults(all){
   const seen=new Set();
   let evts=events.filter(i=>{const u=i.event?.contentUrl;if(seen.has(u))return false;seen.add(u);return true;});
   if(selectedDay)evts=evts.filter(i=>i.event.date?.split('T')[0]===selectedDay);
-  const filtered=all?evts:evts.filter(i=>(i.event.artists||[]).some(a=>isHit(a.name)));
+  let filtered=all?evts:evts.filter(i=>(i.event.artists||[]).some(a=>isHit(a.name)));
+
+  // Show filters section if we have events
+  const filtSec=document.getElementById('filters-section');
+  if(filtSec) filtSec.style.display=filtered.length?'block':'none';
+
+  // Build genre filter bar from available genres
+  const allGenres=new Set();
+  filtered.forEach(i=>(i.event.genres||[]).forEach(g=>g?.name&&allGenres.add(g.name)));
+  const bar=document.getElementById('genre-filter-bar');
+  if(bar){
+    bar.innerHTML=allGenres.size>0
+      ? [...allGenres].sort().map(g=>`<button class="tog${activeGenres.has(g)?' on':''}" onclick="toggleGenre('${g.replace(/'/g,"\\'")}')">${esc(g)}</button>`).join('')
+      : '<span style="font-family:var(--mono);font-size:10px;color:var(--muted)">No genres available</span>';
+  }
+  const gCount=document.getElementById('genre-filter-count');
+  if(gCount) gCount.textContent=activeGenres.size>0?`(${activeGenres.size})`:'';
+
+  // Render artist filter pills
+  renderArtistFilterPills();
+  const aCount=document.getElementById('artist-filter-count');
+  if(aCount) aCount.textContent=activeArtistFilters.size>0?`(${activeArtistFilters.size})`:'';
+
+  // Apply genre filter
+  if(activeGenres.size>0){
+    filtered=filtered.filter(i=>(i.event.genres||[]).some(g=>activeGenres.has(g.name)));
+  }
+  // Apply artist filter
+  if(activeArtistFilters.size>0){
+    const lcFilters=new Set([...activeArtistFilters].map(s=>s.toLowerCase()));
+    filtered=filtered.filter(i=>(i.event.artists||[]).some(a=>lcFilters.has(a.name.toLowerCase())));
+  }
+
   const nores=document.getElementById('nores');
   if(!filtered.length){
     const noResMsg=nores.querySelector('.nores-msg');
@@ -1160,6 +1192,7 @@ function renderResults(all){
     return;
   }
   nores.style.display='none';
+
   const byDate={};
   filtered.forEach(i=>{const d=i.event.date?.split('T')[0]||'TBA';if(!byDate[d])byDate[d]=[];byDate[d].push(i);});
   window._shareData=[];
@@ -1173,11 +1206,13 @@ function renderResults(all){
       const arts=e.artists||[];
       const mc=arts.filter(a=>isHit(a.name)).length;
       const tags=arts.map(a=>`<span class="tag${isHit(a.name)?' hit':''}">${esc(a.name)}</span>`).join('');
+      const genres=e.genres||[];
+      const genreTags=genres.map(g=>`<span class="genre-tag">${esc(g.name)}</span>`).join('');
       const badge=mc>0?`<span class="mbadge">↑ ${mc} match${mc>1?'es':''}</span>`:'';
       const shareIcon=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`;
       const shareIdx=window._shareData.length;
-      window._shareData.push({url, title:e.title, date:e.date?e.date.split('T')[0]:'', venue:e.venue?.name||''});
-      html+=`<div class="ecard"><div><div class="etitle">${esc(e.title)}</div><div class="evenue">⌖ ${esc(e.venue?.name||'TBA')}</div><div class="etags">${tags}</div></div><div class="emeta"><a class="elink" href="${url}" target="_blank">RA →</a>${badge}<button class="share-btn" onclick="openShare(event,${shareIdx})" title="Share">${shareIcon}</button></div></div>`;
+      window._shareData.push({url,title:e.title,date:e.date?e.date.split('T')[0]:'',venue:e.venue?.name||''});
+      html+=`<div class="ecard"><div><div class="etitle">${esc(e.title)}</div><div class="evenue">⌖ ${esc(e.venue?.name||'TBA')}</div><div class="etags">${tags}</div>${genreTags?`<div class="egenres">${genreTags}</div>`:''}</div><div class="emeta"><a class="elink" href="${url}" target="_blank">RA →</a>${badge}<button class="share-btn" onclick="openShare(event,${shareIdx})" title="Share">${shareIcon}</button></div></div>`;
     });
     html+='</div>';
   });
