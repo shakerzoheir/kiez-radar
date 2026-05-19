@@ -470,7 +470,7 @@ if(window.location.search.includes('code=') && sessionStorage.getItem('spotify_v
   sessionStorage.setItem('spotify_returning','1');
 }
 let clerkInstance=null, currentUserId=null, appInitialized=false;
-let artistIndex=[], manualArtists=[];
+let artistIndex=[], manualArtists=[], activeGenres=new Set(), activeArtistFilters=new Set();
 let calViewDate=new Date(), calStart=null, calEnd=null;
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
