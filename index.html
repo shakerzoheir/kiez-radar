@@ -158,6 +158,27 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
 .etitle{font-family:var(--sans);font-weight:500;font-size:16px;color:var(--text);margin-bottom:6px;line-height:1.3}
 .evenue{font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:10px}
 .etags{display:flex;flex-wrap:wrap;gap:3px}
+.egenres{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
+.genre-tag{font-family:var(--mono);font-size:9px;letter-spacing:.08em;padding:2px 6px;border:1px solid var(--border);color:var(--muted);text-transform:uppercase}
+.filters-section{margin-bottom:16px}
+.filter-block{margin-bottom:12px}
+.filter-header{display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:8px 0;user-select:none}
+.filter-header:hover{color:var(--text)}
+.filter-header .chevron{transition:transform .15s}
+.filter-header.open .chevron{transform:rotate(180deg)}
+.filter-header .count-badge{font-family:var(--mono);font-size:10px;color:var(--accent);margin-left:6px}
+.filter-body{padding-top:8px;display:none}
+.filter-body.open{display:block}
+.genre-filter-bar{display:flex;flex-wrap:wrap;gap:6px}
+.genre-filter-bar .tog{font-size:10px;padding:5px 10px}
+.artist-filter-input-wrap{position:relative}
+.artist-filter-input{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px 12px;font-family:var(--mono);font-size:13px;outline:none;box-sizing:border-box}
+.artist-filter-input:focus{border-color:var(--accent)}
+.artist-filter-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.artist-filter-dropdown{position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-top:none;max-height:200px;overflow-y:auto;z-index:50;display:none}
+.artist-filter-dropdown.open{display:block}
+.artist-filter-dropdown div{padding:8px 12px;cursor:pointer;font-family:var(--mono);font-size:12px;color:var(--text)}
+.artist-filter-dropdown div:hover,.artist-filter-dropdown div.highlight{background:var(--surface2)}
 .tag{font-family:var(--mono);font-size:10px;padding:2px 7px;background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
 .tag.hit{background:rgba(232,255,0,.1);color:var(--accent);border-color:rgba(232,255,0,.3)}
 .emeta{text-align:right}
@@ -403,6 +424,30 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
     </div>
 
     <div class="results-wrap">
+      <div class="filters-section" id="filters-section" style="display:none">
+        <div class="filter-block">
+          <div class="filter-header" id="artist-filter-header" onclick="toggleFilterBlock('artist')">
+            <span>Artist Filter <span class="count-badge" id="artist-filter-count"></span></span>
+            <span class="chevron">▾</span>
+          </div>
+          <div class="filter-body" id="artist-filter-body">
+            <div class="artist-filter-input-wrap">
+              <input type="text" class="artist-filter-input" id="artist-filter-input" placeholder="Type artist name..." autocomplete="off" spellcheck="false">
+              <div class="artist-filter-dropdown" id="artist-filter-dropdown"></div>
+            </div>
+            <div class="artist-filter-pills" id="artist-filter-pills"></div>
+          </div>
+        </div>
+        <div class="filter-block">
+          <div class="filter-header" id="genre-filter-header" onclick="toggleFilterBlock('genre')">
+            <span>Music Genre <span class="count-badge" id="genre-filter-count"></span></span>
+            <span class="chevron">▾</span>
+          </div>
+          <div class="filter-body" id="genre-filter-body">
+            <div class="genre-filter-bar" id="genre-filter-bar"></div>
+          </div>
+        </div>
+      </div>
       <div id="reslist"></div>
       <div class="no-res" id="nores">
         <div class="nores-msg" style="margin-bottom:16px;color:var(--muted);font-size:13px">No events found for your artists in this period.</div>
