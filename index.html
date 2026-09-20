@@ -2085,10 +2085,13 @@ async function doBatchFollow(){
   const uris=activeNames.map(n=>followArtistURIs[n.toLowerCase()]).filter(Boolean);
   if(!uris.length){alert('No artists to follow');return;}
   const btn=document.getElementById('follow-confirm-btn');
-  btn.disabled=true; btn.textContent='Following...';
+  btn.disabled=true;
+  const total=uris.length;
+  let done=0;
   try{
     for(let i=0;i<uris.length;i+=20){
       const batch=uris.slice(i,i+20);
+      btn.textContent='Following... '+Math.min(done+batch.length,total)+'/'+total;
       const res=await fetch('https://api.spotify.com/v1/me/library?uris='+batch.join(','),{
         method:'PUT',
         headers:{Authorization:'Bearer '+token}
@@ -2097,8 +2100,9 @@ async function doBatchFollow(){
         const err=await res.text();
         throw new Error(res.status+': '+err.slice(0,100));
       }
+      done+=batch.length;
     }
-    btn.textContent='Followed '+uris.length+' artists ✓';
+    btn.textContent='✓ Followed '+total+' artists on Spotify';
     btn.style.color='var(--accent)';
     btn.style.borderColor='var(--accent)';
   }catch(e){
