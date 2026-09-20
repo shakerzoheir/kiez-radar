@@ -1666,7 +1666,7 @@ async function importSCPlaylist(){
 // ─── Spotify OAuth ────────────────────────────────────────────────────────────
 const SPOTIFY_CLIENT_ID = '32c98553ffd841288b1c719fa50d9880';
 const SPOTIFY_REDIRECT = 'https://kiez-radar.vercel.app/callback';
-const SPOTIFY_SCOPES = 'playlist-read-private playlist-read-collaborative';
+const SPOTIFY_SCOPES = 'playlist-read-private playlist-read-collaborative user-library-modify';
 
 function generateCodeVerifier(){
   const arr=new Uint8Array(32);
