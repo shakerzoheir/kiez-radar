@@ -4,21 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KIEZ RADAR — Berlin Event Finder</title>
-
-<!-- PWA -->
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#0a0a0a">
-<meta name="mobile-web-app-capable" content="yes">
-
-<!-- iOS PWA -->
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Kiez Radar">
-<link rel="apple-touch-icon" href="/icon-192.png">
-<link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png">
-<link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png">
-<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script async crossorigin="anonymous" data-clerk-publishable-key="pk_test_bGl2ZS1zaHJpbXAtNTguY2xlcmsuYWNjb3VudHMuZGV2JA"
@@ -1664,7 +1649,7 @@ async function importSCPlaylist(){
 // ─── Spotify OAuth ────────────────────────────────────────────────────────────
 const SPOTIFY_CLIENT_ID = '32c98553ffd841288b1c719fa50d9880';
 const SPOTIFY_REDIRECT = 'https://kiez-radar.vercel.app/callback';
-const SPOTIFY_SCOPES = 'playlist-read-private playlist-read-collaborative';
+const SPOTIFY_SCOPES = 'playlist-read-private playlist-read-collaborative user-library-modify';
 
 function generateCodeVerifier(){
   const arr=new Uint8Array(32);
@@ -1819,6 +1804,7 @@ function renderSpotifyPlaylists(playlists, myUserId){
 }
 
 let spotifyImportedArtists=[];
+let spotifyArtistURIs={}; // map lowercase name -> spotify:artist:id
 
 async function importSpotify(){
   const token=sessionStorage.getItem('spotify_token');
@@ -1828,6 +1814,7 @@ async function importSpotify(){
   const btn=document.getElementById('spotify-import-btn');
   btn.disabled=true; btn.textContent='Importing...';
   const newArtists=new Set();
+  spotifyArtistURIs={};
   let skipped=0;
   try{
     for(const cb of checked){
@@ -1857,7 +1844,13 @@ async function importSpotify(){
           // Feb 2026: field renamed from .track to .item
           const track=item?.item??item?.track;
           if(!track) return;
-          (track.artists||[]).forEach(a=>{if(a?.name)newArtists.add(a.name.trim());});
+          (track.artists||[]).forEach(a=>{
+            if(a?.name){
+              newArtists.add(a.name.trim());
+              if(a.uri) spotifyArtistURIs[a.name.trim().toLowerCase()]=a.uri;
+              else if(a.id) spotifyArtistURIs[a.name.trim().toLowerCase()]='spotify:artist:'+a.id;
+            }
+          });
         });
         url=d.next||null;
       }
@@ -1895,6 +1888,7 @@ function showSpotifyPreview(){
     <div id="spotify-preview-pills" style="display:flex;flex-wrap:wrap;gap:6px;max-height:240px;overflow-y:auto;margin-bottom:14px"></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn btn-p" id="spotify-confirm-btn" onclick="confirmSpotifyImport()">Add ${spotifyImportedArtists.length} artists to my list →</button>
+      <button class="btn-s" id="spotify-follow-btn" onclick="followAllOnSpotify()" style="${Object.keys(spotifyArtistURIs).length?'':'display:none'}">Follow ${spotifyImportedArtists.filter(n=>spotifyArtistURIs[n.toLowerCase()]).length} on Spotify</button>
       <button class="btn-s" onclick="document.getElementById('import-preview-panel').style.display='none'">← Back</button>
     </div>`;
   const pillWrap=document.getElementById('spotify-preview-pills');
@@ -1912,10 +1906,47 @@ function showSpotifyPreview(){
       const activeCount=[...document.querySelectorAll('#spotify-preview-pills .pill')].filter(p=>p.dataset.active==='1').length;
       const btn=document.getElementById('spotify-confirm-btn');
       if(btn) btn.textContent=`Add ${activeCount} artists to my list →`;
+      const fbtn=document.getElementById('spotify-follow-btn');
+      if(fbtn && !fbtn.disabled){
+        const activeNames=[...document.querySelectorAll('#spotify-preview-pills .pill')].filter(p=>p.dataset.active==='1').map(p=>spotifyImportedArtists[+p.dataset.index]);
+        const followCount=activeNames.filter(n=>spotifyArtistURIs[n.toLowerCase()]).length;
+        fbtn.textContent=`Follow ${followCount} on Spotify`;
+      }
     });
     pillWrap.appendChild(pill);
   });
   document.getElementById('spotify-import-btn').style.display='none';
+}
+
+async function followAllOnSpotify(){
+  const token=sessionStorage.getItem('spotify_token');
+  if(!token){alert('Not connected to Spotify');return;}
+  const pills=[...document.querySelectorAll('#spotify-preview-pills .pill')];
+  const activeNames=pills.filter(p=>p.dataset.active==='1').map(p=>spotifyImportedArtists[+p.dataset.index]);
+  const uris=activeNames.map(n=>spotifyArtistURIs[n.toLowerCase()]).filter(Boolean);
+  if(!uris.length){alert('No Spotify artist URIs available');return;}
+  const btn=document.getElementById('spotify-follow-btn');
+  btn.disabled=true; btn.textContent='Following...';
+  try{
+    // Follow in batches of 20
+    for(let i=0;i<uris.length;i+=20){
+      const batch=uris.slice(i,i+20);
+      const res=await fetch('https://api.spotify.com/v1/me/library?uris='+batch.join(','),{
+        method:'PUT',
+        headers:{Authorization:'Bearer '+token}
+      });
+      if(!res.ok){
+        const err=await res.text();
+        throw new Error(res.status+': '+err.slice(0,100));
+      }
+    }
+    btn.textContent='Followed '+uris.length+' artists ✓';
+    btn.style.color='var(--accent)';
+    btn.style.borderColor='var(--accent)';
+  }catch(e){
+    btn.textContent='Follow failed: '+e.message;
+    btn.disabled=false;
+  }
 }
 
 function confirmSpotifyImport(){
