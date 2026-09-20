@@ -260,6 +260,7 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
   <div class="header-right" id="header-right" style="display:none">
     <span class="user-info" id="user-email"></span>
     <button class="btn-s" onclick="goMyGigs()">My Events</button>
+          <button class="btn-s" onclick="goFollowArtists()">Follow Artists</button>
     <div class="dropdown-wrap" id="artists-dropdown-wrap">
       <button class="btn-s dropdown-trigger" onclick="toggleDropdown()">My Artists ▾</button>
       <div class="dropdown-menu" id="artists-dropdown">
@@ -469,6 +470,22 @@ header{padding:40px 40px 28px;border-bottom:1px solid var(--border);display:flex
           <button class="btn-s" onclick="widenRange()" style="font-size:11px">Widen date range →</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- FOLLOW ARTISTS PANEL -->
+  <div class="step" id="s-follow">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+      <div style="font-family:var(--display);font-size:32px;letter-spacing:.04em">FOLLOW ARTISTS</div>
+      <button class="btn-s" onclick="goMyGigs()">← Back to events</button>
+    </div>
+    <div class="panel">
+      <div class="manual-hint" style="margin-bottom:16px">Select Spotify playlists, preview the artists, then batch follow them all on Spotify in one click.</div>
+      <button class="btn btn-p" id="follow-spotify-btn" onclick="followConnectSpotify()" style="margin-bottom:12px">Connect Spotify →</button>
+      <div id="follow-status" style="font-family:var(--mono);font-size:11px;color:var(--muted);display:none"></div>
+      <div id="follow-playlists" style="display:none;margin-top:12px"></div>
+      <button class="btn btn-p" id="follow-extract-btn" onclick="followExtractArtists()" disabled style="display:none;margin-top:12px">Extract artists →</button>
+      <div id="follow-preview" style="display:none;margin-top:16px"></div>
     </div>
   </div>
 
@@ -1649,7 +1666,7 @@ async function importSCPlaylist(){
 // ─── Spotify OAuth ────────────────────────────────────────────────────────────
 const SPOTIFY_CLIENT_ID = '32c98553ffd841288b1c719fa50d9880';
 const SPOTIFY_REDIRECT = 'https://kiez-radar.vercel.app/callback';
-const SPOTIFY_SCOPES = 'playlist-read-private playlist-read-collaborative user-library-modify';
+const SPOTIFY_SCOPES = 'playlist-read-private playlist-read-collaborative';
 
 function generateCodeVerifier(){
   const arr=new Uint8Array(32);
@@ -1804,7 +1821,6 @@ function renderSpotifyPlaylists(playlists, myUserId){
 }
 
 let spotifyImportedArtists=[];
-let spotifyArtistURIs={}; // map lowercase name -> spotify:artist:id
 
 async function importSpotify(){
   const token=sessionStorage.getItem('spotify_token');
@@ -1814,7 +1830,6 @@ async function importSpotify(){
   const btn=document.getElementById('spotify-import-btn');
   btn.disabled=true; btn.textContent='Importing...';
   const newArtists=new Set();
-  spotifyArtistURIs={};
   let skipped=0;
   try{
     for(const cb of checked){
@@ -1844,27 +1859,20 @@ async function importSpotify(){
           // Feb 2026: field renamed from .track to .item
           const track=item?.item??item?.track;
           if(!track) return;
-          (track.artists||[]).forEach(a=>{
-            if(a?.name){
-              newArtists.add(a.name.trim());
-              if(a.uri) spotifyArtistURIs[a.name.trim().toLowerCase()]=a.uri;
-              else if(a.id) spotifyArtistURIs[a.name.trim().toLowerCase()]='spotify:artist:'+a.id;
-            }
-          });
+          (track.artists||[]).forEach(a=>{if(a?.name)newArtists.add(a.name.trim());});
         });
         url=d.next||null;
       }
     }
-    // Filter out ones already in list
-    const existing=selected; // selected is already a Set of lowercased names
+    // Filter to RA index only — for event matching
     const totalFound=newArtists.size;
     const inRAIndex=[...newArtists].filter(n=>isVerified(n));
     const notInIndex=totalFound-inRAIndex.length;
     spotifyImportedArtists=inRAIndex.filter(n=>!selected.has(n.toLowerCase())).sort((a,b)=>a.localeCompare(b));
     const alreadyHave=inRAIndex.length-spotifyImportedArtists.length;
     const skipMsg=skipped>0?` (${skipped} playlist${skipped>1?'s':''} blocked by Spotify)`:'';
-    const indexMsg=notInIndex>0?` · ${notInIndex} not in RA database`:'';
-    showSpotifyStatus(spotifyImportedArtists.length===0?`No artists found in RA database.${skipMsg}`:`Found ${spotifyImportedArtists.length} new artists${alreadyHave>0?` · ${alreadyHave} already in your list`:''}${indexMsg}${skipMsg}.`);
+    const indexMsg=notInIndex>0?` · ${notInIndex} not in our database`:'';
+    showSpotifyStatus(spotifyImportedArtists.length===0?`No new artists found in our database.${skipMsg}`:`Found ${spotifyImportedArtists.length} new artists${alreadyHave>0?` · ${alreadyHave} already in your list`:''}${indexMsg}${skipMsg}.`);
     btn.textContent='Extract artists →';
     btn.disabled=false;
     document.getElementById('spotify-import-btn').style.display='none';
@@ -1881,19 +1889,17 @@ function showSpotifyPreview(){
   const inner=document.getElementById('import-preview-inner');
   const total=spotifyImportedArtists.length;
   panel.style.display='block';
-  // Scroll to preview
   setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'nearest'}),50);
   inner.innerHTML=`
     <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:10px;letter-spacing:.08em">${total} NEW ARTISTS FOUND — DESELECT ANY YOU DON'T WANT</div>
-    <div id="spotify-preview-pills" style="display:flex;flex-wrap:wrap;gap:6px;max-height:240px;overflow-y:auto;margin-bottom:14px"></div>
+    <div id="spotify-preview-pills" style="display:flex;flex-wrap:wrap;gap:6px;max-height:300px;overflow-y:auto;margin-bottom:14px"></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-p" id="spotify-confirm-btn" onclick="confirmSpotifyImport()">Add ${spotifyImportedArtists.length} artists to my list →</button>
-      <button class="btn-s" id="spotify-follow-btn" onclick="followAllOnSpotify()" style="${Object.keys(spotifyArtistURIs).length?'':'display:none'}">Follow ${spotifyImportedArtists.filter(n=>spotifyArtistURIs[n.toLowerCase()]).length} on Spotify</button>
+      <button class="btn btn-p" id="spotify-confirm-btn" onclick="confirmSpotifyImport()">Add ${total} to my list →</button>
       <button class="btn-s" onclick="document.getElementById('import-preview-panel').style.display='none'">← Back</button>
     </div>`;
   const pillWrap=document.getElementById('spotify-preview-pills');
   spotifyImportedArtists.forEach((name,i)=>{
-    const dot=artistIndex.some(a=>a.toLowerCase()===name.toLowerCase())?'<span style="color:var(--accent);margin-right:3px">●</span>':'';
+    const dot=isVerified(name)?'<span style="color:var(--accent);margin-right:3px">●</span>':'';
     const pill=document.createElement('div');
     pill.className='pill on';
     pill.style.cssText='font-size:11px;padding:4px 10px;cursor:pointer;user-select:none';
@@ -1905,30 +1911,182 @@ function showSpotifyPreview(){
       else{pill.dataset.active='1';pill.style.opacity='1';}
       const activeCount=[...document.querySelectorAll('#spotify-preview-pills .pill')].filter(p=>p.dataset.active==='1').length;
       const btn=document.getElementById('spotify-confirm-btn');
-      if(btn) btn.textContent=`Add ${activeCount} artists to my list →`;
-      const fbtn=document.getElementById('spotify-follow-btn');
-      if(fbtn && !fbtn.disabled){
-        const activeNames=[...document.querySelectorAll('#spotify-preview-pills .pill')].filter(p=>p.dataset.active==='1').map(p=>spotifyImportedArtists[+p.dataset.index]);
-        const followCount=activeNames.filter(n=>spotifyArtistURIs[n.toLowerCase()]).length;
-        fbtn.textContent=`Follow ${followCount} on Spotify`;
-      }
+      if(btn) btn.textContent='Add '+activeCount+' to my list →';
     });
     pillWrap.appendChild(pill);
   });
   document.getElementById('spotify-import-btn').style.display='none';
 }
 
-async function followAllOnSpotify(){
+function goFollowArtists(){
+  const token=sessionStorage.getItem('spotify_token');
+  const btn=document.getElementById('follow-spotify-btn');
+  if(token && btn){btn.textContent='✓ Connected to Spotify';btn.style.opacity='0.6';}
+  goStep('s-follow');
+}
+
+function showFollowStatus(msg){
+  const el=document.getElementById('follow-status');
+  el.textContent=msg; el.style.display=msg?'block':'none';
+}
+
+async function followConnectSpotify(){
+  const existing=sessionStorage.getItem('spotify_token');
+  if(existing){
+    await followLoadPlaylists(existing);
+    return;
+  }
+  connectSpotify();
+}
+
+async function followLoadPlaylists(token){
+  showFollowStatus('Loading your playlists...');
+  document.getElementById('follow-playlists').style.display='none';
+  document.getElementById('follow-extract-btn').style.display='none';
+  try{
+    const meRes=await fetch('https://api.spotify.com/v1/me',{headers:{Authorization:'Bearer '+token}});
+    const meText=await meRes.text();
+    let me;
+    try{me=JSON.parse(meText);}catch(e){
+      sessionStorage.removeItem('spotify_token');
+      document.getElementById('follow-spotify-btn').textContent='Connect Spotify →';
+      document.getElementById('follow-spotify-btn').style.opacity='1';
+      showFollowStatus('Not authorized. Please reconnect.');
+      return;
+    }
+    if(me.error) throw new Error(me.error.message);
+    const myUserId=me.id;
+    let playlists=[], url='https://api.spotify.com/v1/me/playlists?limit=50';
+    while(url){
+      const res=await fetch(url,{headers:{Authorization:'Bearer '+token}});
+      const d=await res.json();
+      if(d.error) throw new Error(d.error.message);
+      playlists=playlists.concat((d.items||[]).filter(p=>p&&p.id));
+      url=d.next||null;
+    }
+    if(!playlists.length){showFollowStatus('No playlists found.');return;}
+    const wrap=document.getElementById('follow-playlists');
+    wrap.innerHTML='<div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:8px;letter-spacing:.08em">SELECT PLAYLISTS</div>';
+    const owned=playlists.filter(p=>p.owner?.id===myUserId||p.collaborative);
+    const others=playlists.filter(p=>p.owner?.id!==myUserId&&!p.collaborative);
+    owned.forEach(p=>{
+      const row=document.createElement('label');
+      row.style.cssText='display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;font-family:var(--mono);font-size:11px;color:var(--text);border-bottom:1px solid var(--border)';
+      const tc=p.items?.total||'?';
+      row.innerHTML='<input type="checkbox" data-id="'+p.id+'" class="follow-pl-cb" style="accent-color:var(--accent)"><span>'+esc(p.name)+'</span><span style="color:var(--muted);margin-left:auto">'+tc+' tracks</span>';
+      wrap.appendChild(row);
+    });
+    if(others.length>0){
+      const note=document.createElement('div');
+      note.style.cssText='font-family:var(--mono);font-size:10px;color:var(--muted);padding:8px 0 4px;margin-top:4px';
+      note.textContent=others.length+' playlist'+(others.length>1?'s':'')+' by others hidden';
+      wrap.appendChild(note);
+    }
+    wrap.style.display='block';
+    wrap.addEventListener('change',()=>{
+      const any=[...wrap.querySelectorAll('.follow-pl-cb')].some(c=>c.checked);
+      const btn=document.getElementById('follow-extract-btn');
+      btn.style.display='block';
+      btn.disabled=!any;
+    });
+    showFollowStatus('');
+    const btn=document.getElementById('follow-spotify-btn');
+    btn.textContent='✓ Connected to Spotify';
+    btn.style.opacity='0.6';
+  }catch(e){
+    showFollowStatus('Failed: '+e.message);
+  }
+}
+
+let followArtistsList=[];
+let followArtistURIs={};
+
+async function followExtractArtists(){
+  const token=sessionStorage.getItem('spotify_token');
+  if(!token){showFollowStatus('Not connected');return;}
+  const checked=[...document.querySelectorAll('.follow-pl-cb:checked')];
+  if(!checked.length) return;
+  const btn=document.getElementById('follow-extract-btn');
+  btn.disabled=true; btn.textContent='Extracting...';
+  const newArtists=new Set();
+  followArtistURIs={};
+  try{
+    for(const cb of checked){
+      const pid=cb.dataset.id;
+      showFollowStatus('Fetching playlist...');
+      let url='https://api.spotify.com/v1/playlists/'+pid+'/items?limit=100';
+      while(url){
+        const res=await fetch(url,{headers:{Authorization:'Bearer '+token}});
+        const d=await res.json();
+        if(d.error){
+          if(d.error.status===403) break;
+          throw new Error(d.error.message);
+        }
+        (d.items||[]).forEach(item=>{
+          const track=item?.item??item?.track;
+          if(!track) return;
+          (track.artists||[]).forEach(a=>{
+            if(a?.name){
+              newArtists.add(a.name.trim());
+              if(a.uri) followArtistURIs[a.name.trim().toLowerCase()]=a.uri;
+              else if(a.id) followArtistURIs[a.name.trim().toLowerCase()]='spotify:artist:'+a.id;
+            }
+          });
+        });
+        url=d.next||null;
+      }
+    }
+    followArtistsList=[...newArtists].sort((a,b)=>a.localeCompare(b));
+    showFollowStatus('');
+    btn.textContent='Extract artists →';
+    btn.disabled=false;
+    renderFollowPreview();
+  }catch(e){
+    showFollowStatus('Failed: '+e.message);
+    btn.textContent='Extract artists →';
+    btn.disabled=false;
+  }
+}
+
+function renderFollowPreview(){
+  const wrap=document.getElementById('follow-preview');
+  const total=followArtistsList.length;
+  wrap.style.display='block';
+  wrap.innerHTML=`
+    <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:10px;letter-spacing:.08em">${total} ARTISTS FOUND — DESELECT ANY YOU DON'T WANT</div>
+    <div id="follow-preview-pills" style="display:flex;flex-wrap:wrap;gap:6px;max-height:300px;overflow-y:auto;margin-bottom:14px"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-p" id="follow-confirm-btn" onclick="doBatchFollow()">Follow ${total} on Spotify →</button>
+      <button class="btn-s" onclick="document.getElementById('follow-preview').style.display='none'">← Back</button>
+    </div>`;
+  const pillWrap=document.getElementById('follow-preview-pills');
+  followArtistsList.forEach((name,i)=>{
+    const pill=document.createElement('div');
+    pill.className='pill on';
+    pill.style.cssText='font-size:11px;padding:4px 10px;cursor:pointer;user-select:none';
+    pill.dataset.index=i;
+    pill.dataset.active='1';
+    pill.innerHTML=esc(name)+' <span class="x" style="opacity:1">×</span>';
+    pill.addEventListener('click',()=>{
+      if(pill.dataset.active==='1'){pill.dataset.active='0';pill.style.opacity='.35';}
+      else{pill.dataset.active='1';pill.style.opacity='1';}
+      const count=[...document.querySelectorAll('#follow-preview-pills .pill')].filter(p=>p.dataset.active==='1').length;
+      document.getElementById('follow-confirm-btn').textContent='Follow '+count+' on Spotify →';
+    });
+    pillWrap.appendChild(pill);
+  });
+}
+
+async function doBatchFollow(){
   const token=sessionStorage.getItem('spotify_token');
   if(!token){alert('Not connected to Spotify');return;}
-  const pills=[...document.querySelectorAll('#spotify-preview-pills .pill')];
-  const activeNames=pills.filter(p=>p.dataset.active==='1').map(p=>spotifyImportedArtists[+p.dataset.index]);
-  const uris=activeNames.map(n=>spotifyArtistURIs[n.toLowerCase()]).filter(Boolean);
-  if(!uris.length){alert('No Spotify artist URIs available');return;}
-  const btn=document.getElementById('spotify-follow-btn');
+  const pills=[...document.querySelectorAll('#follow-preview-pills .pill')];
+  const activeNames=pills.filter(p=>p.dataset.active==='1').map(p=>followArtistsList[+p.dataset.index]);
+  const uris=activeNames.map(n=>followArtistURIs[n.toLowerCase()]).filter(Boolean);
+  if(!uris.length){alert('No artists to follow');return;}
+  const btn=document.getElementById('follow-confirm-btn');
   btn.disabled=true; btn.textContent='Following...';
   try{
-    // Follow in batches of 20
     for(let i=0;i<uris.length;i+=20){
       const batch=uris.slice(i,i+20);
       const res=await fetch('https://api.spotify.com/v1/me/library?uris='+batch.join(','),{
@@ -1948,6 +2106,8 @@ async function followAllOnSpotify(){
     btn.disabled=false;
   }
 }
+
+
 
 function confirmSpotifyImport(){
   const pills=[...document.querySelectorAll('#spotify-preview-pills .pill')];
